@@ -58,24 +58,17 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
 
         CountDownLatch readyLatch = new CountDownLatch(numberOfTasks);
         CountDownLatch startLatch = new CountDownLatch(1);
+        MockMultipartFile file = getMockMultipartFile();
 
         ExecutorService executorService = Executors.newFixedThreadPool(poolSize);
 
         List<Future<UploadObjectResult>> futures = new ArrayList<>();
 
         for (int i = 0; i < numberOfTasks; i++) {
-            int index = i;
 
             Future<UploadObjectResult> future = executorService.submit(() -> {
                 readyLatch.countDown();
                 startLatch.await();
-
-                MockMultipartFile file = new MockMultipartFile(
-                        "file",
-                        "test-" + index + ".txt",
-                        "text/plain",
-                        ("Hello MinIO " + index).getBytes(StandardCharsets.UTF_8)
-                );
 
                 return minIOObjectStorageClient.upload(
                         FileUploadCommand.builder()
