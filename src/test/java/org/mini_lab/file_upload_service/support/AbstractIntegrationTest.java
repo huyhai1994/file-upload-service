@@ -36,7 +36,7 @@ public class AbstractIntegrationTest {
         registry.add("minio.endpoint", miniostorage::getS3URL);
         registry.add("minio.access-key", miniostorage::getUserName);
         registry.add("minio.secret-key", miniostorage::getPassword);
-        registry.add("minio.bucket", () -> "file-upload-test");
+        registry.add("minio.bucket-name", () -> "file-upload-test");
     }
 }
 
