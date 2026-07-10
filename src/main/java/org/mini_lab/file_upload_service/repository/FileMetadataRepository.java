@@ -16,4 +16,14 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, Long
               and fm.status = org.mini_lab.file_upload_service.entity.FileState.UPLOADING
             """)
     int markCompletedIfUploading(@Param("fileId") Long fileId);
+
+
+    @Modifying
+    @Query("""
+                    update FileMetadata  fm
+                    set fm.status = org.mini_lab.file_upload_service.entity.FileState.FAILED
+                    where fm.id = :fileId
+                    and fm.status = org.mini_lab.file_upload_service.entity.FileState.UPLOADING
+            """)
+    int markFailedIfUploading(@Param("fileId") Long fileId);
 }
