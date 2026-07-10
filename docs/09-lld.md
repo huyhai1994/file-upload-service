@@ -179,6 +179,7 @@ multipart/form-data
 | 400    | File không hợp lệ |
 | 413    | File quá lớn      |
 | 500    | Lỗi hệ thống      |
+|        |                   |
 
 ---
 ### 6.3 Class Diagram
@@ -186,125 +187,6 @@ multipart/form-data
 
 @startuml  
   
-class FileUploadController {  
-  +upload(request: UploadObjectRequestDTO): ResponseEntity<FileMetadataResponseDTO>  
-}  
-  
-class FileUploadService {  
-  +processUploadFile(request: UploadObjectRequestDTO): FileMetadataResponseDTO  
-}  
-  
-class FileUploadRequestExtractor {  
-  +extract(request: UploadObjectRequestDTO): FileUploadCommand  
-}  
-  
-class FileRequestVerifyService {  
-  +verify(command: FileUploadCommand): void  
-}  
-  
-class FileMetadataCreationService {  
-  +createUploadingMetadata(command: FileUploadCommand): FileMetadata  
-}  
-  
-class FileUploadStateManager {  
-  +markCompleted(fileId: Long, checksum: String): void  
-  +markFailed(fileId: Long, reason: String): void  
-}  
-  
-class FileMetadata {  
-  -id: Long  
-  -originalFilename: String  
-  -objectKey: String  
-  -contentType: String  
-  -size: Long  
-  -checksum: String  
-  -state: FileState  
-  -createdAt: OffsetDateTime  
-  -updatedAt: OffsetDateTime  
-}  
-  
-enum FileState {  
-  UPLOADING  
-  COMPLETED  
-  FAILED  
-}  
-  
-interface FileMetadataRepository {  
-  +save(fileMetadata: FileMetadata): FileMetadata  
-  +findById(id: Long): Optional<FileMetadata>  
-}  
-  
-interface ObjectStorage {  
-  +upload(command: FileUploadCommand): UploadObjectResult  
-  +delete(objectKey: String): void  
-}  
-  
-class MinIOObjectStorage {  
-  +upload(command: FileUploadCommand): UploadObjectResult  
-  +delete(objectKey: String): void  
-}  
-  
-class UploadObjectRequestDTO {  
-  -file: MultipartFile  
-  -ownerId: Long  
-}  
-  
-class FileUploadCommand {  
-  -file: MultipartFile  
-  -originalFilename: String  
-  -contentType: String  
-  -size: Long  
-  -ownerId: Long  
-}  
-  
-class UploadObjectResult {  
-  -objectKey: String  
-  -etag: String  
-  -checksum: String  
-}  
-  
-class FileMetadataResponseDTO {  
-  -fileId: Long  
-  -filename: String  
-  -size: Long  
-  -contentType: String  
-  -checksum: String  
-  -state: FileState  
-}  
-  
-FileUploadController --> FileUploadService: invokes  
-  
-FileUploadService --> FileUploadRequestExtractor: extracts command  
-FileUploadService --> FileRequestVerifyService: verifies command  
-FileUploadService --> FileMetadataCreationService: creates metadata  
-FileUploadService --> ObjectStorage: uploads object  
-FileUploadService --> FileUploadStateManager: changes state  
-  
-FileUploadRequestExtractor ..> UploadObjectRequestDTO: reads  
-FileUploadRequestExtractor ..> FileUploadCommand: creates  
-  
-FileRequestVerifyService ..> FileUploadCommand  
-FileMetadataCreationService ..> FileUploadCommand  
-ObjectStorage ..> FileUploadCommand  
-  
-FileMetadataCreationService --> FileMetadataRepository: saves metadata  
-FileUploadStateManager --> FileMetadataRepository: updates state  
-  
-FileMetadataRepository ..> FileMetadata: persists  
-FileMetadata --> FileState  
-  
-MinIOObjectStorage ..|> ObjectStorage: implements  
-  
-FileUploadController ..> UploadObjectRequestDTO  
-FileUploadController ..> FileMetadataResponseDTO  
-  
-ObjectStorage ..> UploadObjectResult  
-  
-@enduml
-```
-### 6.4 Sequence Flow
-```plantuml
-@startuml  
   
 class FileUploadController {  
   +upload(request: UploadObjectRequestDTO): ResponseEntity<FileMetadataResponseDTO>  
@@ -324,6 +206,13 @@ class FileRequestVerifyService {
   
 class FileMetadataCreationService {  
   +createUploadingMetadata(command: FileUploadCommand): FileMetadata  
+}  
+  
+interface ObjectKeyGenerator{  
+   +generate(): String;  
+}  
+  
+class UUIDObjectKeyGenerator{  
 }  
   
 class FileUploadStateManager {  
@@ -390,6 +279,13 @@ class FileMetadataResponseDTO {
   -state: FileState  
 }  
   
+class MinioProperties{  
+- endpoint: String,  
+-  accessKey: String,  
+- secretKey: String,  
+- bucketName: String  
+}  
+  
 FileUploadController --> FileUploadService: invokes  
   
 FileUploadService --> FileUploadRequestExtractor: extracts command  
@@ -418,14 +314,53 @@ FileUploadController ..> FileMetadataResponseDTO
   
 ObjectStorage ..> UploadObjectResult  
   
+UUIDObjectKeyGenerator..|> ObjectKeyGenerator: implements  
+FileMetadataCreationService --> ObjectKeyGenerator: create object key  
+  
+@enduml
+  
+@enduml
+```
+### 6.4 Sequence Flow
+```plantuml
+@startuml  
+title Upload File Flow  
+  
+autonumber  
+  
+actor User  
+  
+participant "File Upload Service" as FUS  
+database "MinIO" as MinIO  
+database "MySQL" as MySQL  
+  
+User -> FUS: Upload file  
+FUS -> FUS: Validate request  
+alt Invalid request  
+    FUS --> User: 400 Bad Request  
+else Valid request  
+    FUS -> MinIO: Upload object  
+    alt Upload success  
+        FUS -> MySQL: Save metadata  
+        alt Metadata saved  
+            FUS --> User: 201 Created  
+        else Metadata save failed  
+            FUS -> MinIO: Delete uploaded object (Compensation)  
+            FUS --> User: 500 Internal Server Error  
+        end  
+    else Upload failed  
+        FUS --> User: Upload failed  
+    end  
+end  
+  
 @enduml
 ```
 ### 6.5 Validation Rules
 #### 6.5.1 Upload file Trùng
 - phase 1 : cho phép upload file trùng , mỗi lần upload:
-    - Tạo một `FileMetadata` mới
-    - sinh `ObjectKet` mới
-    - Upload object lên MinIO
+  - Tạo một `FileMetadata` mới
+  - sinh `ObjectKet` mới
+  - Upload object lên MinIO
 - Phase sau: thêm một **Phase Deduplication** với checksum và cơ chế tham chiếu nhiều metadata tới cùng một object
 ### 6.6 Transaction Boundary
 ### 6.7 Concurrency Control / Locking
@@ -443,12 +378,37 @@ int markCompletedIfUploading(@Param("fileId") Long fileId);
 - Câu `UPDATE ... WHERE id = :fileId AND status = UPLOADING` sẽ lấy exclusive lock trên row được update. Nếu row đã bị chuyển sang `FAILED`, `COMPLETED` hoặc trạng thái khác, số row affected sẽ bằng `0`.
 
 - Đây là cách bảo vệ state machine trước race condition giữa các luồng như upload success, upload failed, timeout recovery hoặc retry worker.
-### 6.8 DB Constraints / Index
-### 6.9 Query
-### 6.10 Error Handling
-### 6.11 Test Cases
-#### 6.11.1 `FileMetadataRepository`
-##### 6.11.1.1 Case nếu
+### 6.8 Object Storage
+#### 6.8.1 Bucket
+- Bucket: file-upload
+- Mỗi object được lưu trong bucket: "file-upload"
+#### 6.8.2 Object Key Naming Convention
+Object Key được tạo bởi hệ thống.
+Format:
+$$  files/{yyyy}/{MM}/{uuid} $$
+Example:
+$$files/2026/07/550e8400-e29b-41d4-a716-446655440000$$
+Decision:
+- Object Key không sử dụng tên file do người dùng cung cấp.
+- Object Key sử dụng UUID để đảm bảo uniqueness.
+- Prefix `files/yyyy/MM` chỉ nhằm mục đích tổ chức object theo phân cấp logic (logical hierarchy).
+- Không lưu trạng thái (UPLOADING, COMPLETED...) trong Object Key.
+- Phase 1 chưa hỗ trợ multi-user nên không đưa userId vào Object Key.
+#### 6.8.3 Metadata Mapping
+| Metadata         | Nơi lưu    |
+| ---------------- | ---------- |
+| objectKey        | MinIO + DB |
+| originalFilename | DB         |
+| contentType      | DB         |
+| size             | DB         |
+| checksum         | DB         |
+
+### 6.9 DB Constraints / Index
+### 6.10 Query
+### 6.11 Error Handling
+### 6.12 Test Cases
+#### 6.12.1 `FileMetadataRepository`
+##### 6.12.1.1 Case nếu
 
 
 ## 7 Feature:

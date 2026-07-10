@@ -96,7 +96,6 @@ class FileMetadataRepositoryTest extends AbstractIntegrationTest {
         fileMetadata.setContentType("image/png");
         fileMetadata.setExtension("png");
         fileMetadata.setObjectKey("2026/07/08/8b7c3d0d-f0d1-4a7c-a3a4-7d4ef2e81a55.png");
-        fileMetadata.setBucket("personal-cloud-storage");
         fileMetadata.setSize(512_384L);
         fileMetadata.setChecksum("9d5ed678fe57bcca610140957afab571f6d9f1f5e53e7d8d0b8f359bd2d96d8e");
         fileMetadata.setStatus(FileState.UPLOADING);
@@ -111,7 +110,6 @@ class FileMetadataRepositoryTest extends AbstractIntegrationTest {
         fileMetadata.setContentType("image/png");
         fileMetadata.setExtension("png");
         fileMetadata.setObjectKey("2026/07/08/8b7c3d0d-f0d1-4a7c-a3a4-7d4ef2e81a55.png");
-        fileMetadata.setBucket("personal-cloud-storage");
         fileMetadata.setSize(512_384L);
         fileMetadata.setChecksum("9d5ed678fe57bcca610140957afab571f6d9f1f5e53e7d8d0b8f359bd2d96d8e");
         fileMetadata.setStatus(FileState.COMPLETED);
@@ -126,7 +124,6 @@ class FileMetadataRepositoryTest extends AbstractIntegrationTest {
         fileMetadata.setContentType(null);
         fileMetadata.setExtension("png");
         fileMetadata.setObjectKey(null);
-        fileMetadata.setBucket(null);
         fileMetadata.setSize(512_384L);
         fileMetadata.setChecksum("9d5ed678fe57bcca610140957afab571f6d9f1f5e53e7d8d0b8f359bd2d96d8e");
         fileMetadata.setStatus(FileState.UPLOADING);

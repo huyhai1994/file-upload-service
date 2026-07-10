@@ -25,8 +25,6 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     MinIOObjectStorageClient minIOObjectStorageClient;
 
-    public static final String BUCKET_NAME = "file-upload-test";
-
     private static @NotNull MockMultipartFile getMockMultipartFile() {
         MockMultipartFile file = new MockMultipartFile(
                 "file",
@@ -45,7 +43,6 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
                         .upload(FileUploadCommand.builder()
                                 .originalFileName(file.getOriginalFilename())
                                 .contentType(file.getContentType())
-                                .bucket(BUCKET_NAME)
                                 .file(file)
                                 .build());
         assertNotNull(result);
@@ -74,7 +71,6 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
                         FileUploadCommand.builder()
                                 .originalFileName(file.getOriginalFilename())
                                 .contentType(file.getContentType())
-                                .bucket(BUCKET_NAME)
                                 .file(file)
                                 .build()
                 );

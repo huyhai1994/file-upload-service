@@ -33,8 +33,6 @@ public class FileMetadata {
     @Column(name = "object_key", nullable = false)
     private String objectKey;
 
-    @Column(name = "bucket", length = 100, nullable = false)
-    private String bucket;
 
     @Column(name = "size", nullable = false)
     private Long size;

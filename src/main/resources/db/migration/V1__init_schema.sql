@@ -6,7 +6,6 @@ CREATE TABLE file_metadata
     content_type VARCHAR(100) not null,
     extension    VARCHAR(20),
     object_key   VARCHAR(255) not null,
-    bucket       VARCHAR(100) not null,
     size         BIGINT       not null,
     checksum     CHAR(64),
     status       VARCHAR(20)  not null,
