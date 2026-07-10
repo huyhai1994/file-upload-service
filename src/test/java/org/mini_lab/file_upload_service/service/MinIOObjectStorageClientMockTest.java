@@ -6,6 +6,7 @@ import io.minio.PutObjectArgs;
 import io.minio.errors.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mini_lab.file_upload_service.configuration.MinioConfigProperties;
 import org.mini_lab.file_upload_service.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.dto.UploadObjectResult;
 import org.mini_lab.file_upload_service.exception.ObjectStorageException;
@@ -33,12 +34,16 @@ class MinIOObjectStorageClientMockTest {
     @Mock
     MinioClient minioClient;
 
+    @Mock
+    MinioConfigProperties minioConfigProperties;
+
 
     @Test
     void whenUploadSuccess_thenReturnUploadObjectResult() throws IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
         FileUploadCommand command = buildFileUploadCommand();
 
         ObjectWriteResponse response = mock(ObjectWriteResponse.class);
+        when(minioConfigProperties.bucketName()).thenReturn("file-upload-test");
         when(response.etag()).thenReturn("fake-etag");
         when(response.object()).thenReturn("test.txt");
         when(response.checksumSHA256()).thenReturn("fake-checksum");
@@ -62,6 +67,8 @@ class MinIOObjectStorageClientMockTest {
         when(minioClient.putObject(any(PutObjectArgs.class)))
                 .thenThrow(new IOException("MinIO failed"));
 
+        when(minioConfigProperties.bucketName()).thenReturn("file-upload-test");
+
         assertThrows(
                 ObjectStorageException.class,
                 () -> minIOObjectStorageClient.upload(command)
@@ -79,7 +86,6 @@ class MinIOObjectStorageClientMockTest {
 
         return FileUploadCommand.builder()
                 .file(file)
-                .bucket("test-bucket")
                 .contentType("text/plain")
                 .originalFileName("test.txt")
                 .build();

@@ -4,6 +4,7 @@ import io.minio.MinioClient;
 import io.minio.ObjectWriteResponse;
 import io.minio.PutObjectArgs;
 import lombok.RequiredArgsConstructor;
+import org.mini_lab.file_upload_service.configuration.MinioConfigProperties;
 import org.mini_lab.file_upload_service.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.dto.UploadObjectResult;
 import org.mini_lab.file_upload_service.exception.ObjectStorageException;
@@ -15,12 +16,13 @@ import java.io.InputStream;
 @RequiredArgsConstructor
 public class MinIOObjectStorageClient implements ObjectStorageClient {
     private final MinioClient minioClient;
+    private final MinioConfigProperties minioConfigProperties;
 
     @Override
     public UploadObjectResult upload(FileUploadCommand command) {
         String contentType = command.contentType();
         String originalFileName = command.originalFileName();
-        String bucket = command.bucket();
+        String bucket = minioConfigProperties.bucketName();
 
         try (InputStream inputStream = command.file().getInputStream()) {
 

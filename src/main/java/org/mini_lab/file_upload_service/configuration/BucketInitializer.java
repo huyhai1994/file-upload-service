@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 public class BucketInitializer {
 
     private final MinioClient minioClient;
-    private final MinioProperties properties;
+    private final MinioConfigProperties properties;
 
     @PostConstruct
     void init() throws Exception {
