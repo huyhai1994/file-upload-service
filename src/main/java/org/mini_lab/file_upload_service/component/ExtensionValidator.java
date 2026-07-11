@@ -1,7 +1,7 @@
 package org.mini_lab.file_upload_service.component;
 
 import lombok.RequiredArgsConstructor;
-import org.mini_lab.file_upload_service.configuration.ExtensionConfigurations;
+import org.mini_lab.file_upload_service.configuration.ExtensionPropertiesConfigurations;
 import org.mini_lab.file_upload_service.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.exception.InvalidFileExtensionException;
 import org.springframework.stereotype.Component;
@@ -12,7 +12,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ExtensionValidator implements FileValidator {
 
-    private final ExtensionConfigurations extensionConfigurations;
+    private final ExtensionPropertiesConfigurations extensionPropertiesConfigurations;
 
 
     @Override
@@ -22,7 +22,7 @@ public class ExtensionValidator implements FileValidator {
 
     @Override
     public void validate(FileUploadCommand command) {
-        List<String> allowedList = extensionConfigurations.getAllowedList();
+        List<String> allowedList = extensionPropertiesConfigurations.getAllowedList();
         String fileName = command.file().getOriginalFilename();
         String extension = null;
         if (fileName != null) {

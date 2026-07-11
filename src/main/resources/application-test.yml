@@ -34,3 +34,9 @@ file:
       - png
       - pdf
       - txt
+  mime-type:
+    allowed-list:
+      - image/jpeg
+      - image/png
+      - application/pdf
+      - text/plain

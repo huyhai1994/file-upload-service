@@ -10,17 +10,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class ExtensionConfigurationsTest extends AbstractIntegrationTest {
-
+class MimeTypePropertiesConfigurationTest extends AbstractIntegrationTest {
 
     @Autowired
-    ExtensionConfigurations extensionConfigurations;
+    MimeTypePropertiesConfiguration mimeTypePropertiesConfiguration;
+
 
     @Test
     void shouldBindAllowedListFromEnvironment() {
-        assertNotNull(extensionConfigurations.getAllowedList());
-        assertTrue(extensionConfigurations.getAllowedList().size() > 1);
+        assertNotNull(mimeTypePropertiesConfiguration.getAllowedList());
+        assertTrue(mimeTypePropertiesConfiguration.getAllowedList().size() > 1);
     }
-
 
 }
