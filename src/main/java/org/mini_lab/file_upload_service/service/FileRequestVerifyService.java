@@ -13,8 +13,10 @@ public class FileRequestVerifyService {
     private final List<FileValidator> fileValidators;
 
     public FileRequestVerifyService(List<FileValidator> fileValidators) {
-        fileValidators.sort(Comparator.comparingInt(FileValidator::order));
-        this.fileValidators = fileValidators;
+        this.fileValidators =
+                fileValidators.stream()
+                        .sorted(Comparator.comparingInt(FileValidator::order))
+                        .toList();
     }
 
     private void validate(FileUploadCommand command) {
