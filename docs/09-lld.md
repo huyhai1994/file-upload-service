@@ -378,6 +378,10 @@ int markCompletedIfUploading(@Param("fileId") Long fileId);
 - Câu `UPDATE ... WHERE id = :fileId AND status = UPLOADING` sẽ lấy exclusive lock trên row được update. Nếu row đã bị chuyển sang `FAILED`, `COMPLETED` hoặc trạng thái khác, số row affected sẽ bằng `0`.
 
 - Đây là cách bảo vệ state machine trước race condition giữa các luồng như upload success, upload failed, timeout recovery hoặc retry worker.
+
+#### 6.7.2 marked failed if uploading
+
+- tương tự như ở  mục `mark completed if uploading`
 ### 6.8 Object Storage
 #### 6.8.1 Bucket
 - Bucket: file-upload
@@ -402,13 +406,80 @@ Decision:
 | contentType      | DB         |
 | size             | DB         |
 | checksum         | DB         |
+### 6.9 File Validation
+```plantuml
+@startuml  
+  
+class FileRequestVerifyService {  
+    -validators: List<FileValidator>  
+    +validate(command: FileUploadCommand): void  
+}  
+  
+interface FileValidator {  
+    +order(): int  
+    +validate(command: FileUploadCommand): void  
+}  
+  
+class EmptyFileValidator  
+class FileSizeValidator  
+class FileNameValidator  
+class ExtensionValidator  
+class MimeTypeValidator  
+  
+class TikaMimeTypeExtractor  
+class FileUploadCommand  
+  
+FileRequestVerifyService --> "1..*" FileValidator  
+FileRequestVerifyService ..> FileUploadCommand  
+FileValidator ..> FileUploadCommand  
+  
+EmptyFileValidator ..|> FileValidator  
+FileSizeValidator ..|> FileValidator  
+FileNameValidator ..|> FileValidator  
+ExtensionValidator ..|> FileValidator  
+MimeTypeValidator ..|> FileValidator  
+MimeTypeValidator --> TikaMimeTypeExtractor: use  
+  
+  
+  
+@enduml
+```
 
-### 6.9 DB Constraints / Index
-### 6.10 Query
-### 6.11 Error Handling
-### 6.12 Test Cases
-#### 6.12.1 `FileMetadataRepository`
-##### 6.12.1.1 Case nếu
+Khi upload file, hệ thống cần thực hiện nhiều bước kiểm tra khác nhau. Vì vậy, dự án áp dụng **Chain of Responsibility Pattern** để tổ chức quy trình validation.
+
+File sẽ lần lượt đi qua các lớp triển khai `FileValidator`. Mỗi validator chịu trách nhiệm kiểm tra một điều kiện cụ thể, chẳng hạn như file rỗng, kích thước file, tên file, extension hoặc MIME type.
+
+Các validator được gán thứ tự thực thi bằng `order`. Thứ tự ưu tiên được sắp xếp dựa trên chi phí xử lý, từ thấp đến cao. Những kiểm tra đơn giản và ít tốn tài nguyên sẽ được thực hiện trước; các kiểm tra cần đọc hoặc phân tích nội dung file sẽ được thực hiện sau.
+
+Cách thiết kế này giúp hệ thống **fail fast**, tránh thực hiện các bước kiểm tra tốn tài nguyên khi file đã không hợp lệ ở những điều kiện cơ bản. Đồng thời, hệ thống có thể dễ dàng mở rộng bằng cách bổ sung validator mới mà không cần thay đổi luồng validation hiện tại.
+
+| Validation                    |     |
+| ----------------------------- | --- |
+| File tồn tại                  |     |
+| File size                     |     |
+| Filename hợp lệ               |     |
+| MIME type (Apache Tika)       |     |
+| Magic Number                  |     |
+| Extension whitelist           |     |
+| Generate Object Key           |     |
+| Metadata validation           |     |
+| Upload exception handling     |     |
+| Compensation khi DB/MinIO lỗi |     |
+| Logging + RequestId           |     |
+### 6.10 DB Constraints / Index
+### 6.11 Query
+### 6.12 Error Handling
+
+| Case                   | HTTP Status | Exception                     |
+| ---------------------- | ----------: | ----------------------------- |
+| File bị rỗng           |         400 | EmptyFileException            |
+| Tên File Không hợp lệ  |         400 | InvalidFilenameException      |
+| Đuôi file không hợp lệ |         400 | InvalidFileExtensionException |
+| Mime file không hợp lê |         400 | MimeTypeValidator             |
+|                        |             |                               |
+### 6.13 Test Cases
+#### 6.13.1 `FileMetadataRepository`
+##### 6.13.1.1 Case nếu
 
 
 ## 7 Feature:
@@ -419,6 +490,5 @@ Decision:
 ### 8.3 Alerting
 
 ## 9 Design Decisions / Trade-offs
-
 
 
