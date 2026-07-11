@@ -26,13 +26,12 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
     MinIOObjectStorageClient minIOObjectStorageClient;
 
     private static @NotNull MockMultipartFile getMockMultipartFile() {
-        MockMultipartFile file = new MockMultipartFile(
+        return new MockMultipartFile(
                 "file",
                 "test.txt",
                 "text/plain",
                 "Hello MinIO".getBytes(StandardCharsets.UTF_8)
         );
-        return file;
     }
 
     @Test
