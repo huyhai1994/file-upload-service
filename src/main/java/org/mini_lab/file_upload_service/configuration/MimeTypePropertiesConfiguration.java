@@ -6,10 +6,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.List;
 
-@ConfigurationProperties("file.extension")
+@ConfigurationProperties("file.mime-type")
 @Getter
 @Setter
-public class ExtensionConfigurations {
-    private List<String> allowedList;
-
+public class MimeTypePropertiesConfiguration {
+    List<String> allowedList;
 }
