@@ -6,6 +6,7 @@ import io.minio.PutObjectArgs;
 import io.minio.errors.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mini_lab.file_upload_service.component.MessageDigestFactory;
 import org.mini_lab.file_upload_service.configuration.MinioConfigProperties;
 import org.mini_lab.file_upload_service.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.dto.UploadObjectResult;
@@ -18,6 +19,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -32,6 +34,9 @@ class MinIOObjectStorageClientMockTest {
     MinIOObjectStorageClient minIOObjectStorageClient;
 
     @Mock
+    MessageDigestFactory messageDigestFactory;
+
+    @Mock
     MinioClient minioClient;
 
     @Mock
@@ -39,34 +44,40 @@ class MinIOObjectStorageClientMockTest {
 
 
     @Test
-    void whenUploadSuccess_thenReturnUploadObjectResult() throws IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+    void whenUploadSuccess_thenReturnUploadObjectResult() throws Exception {
         FileUploadCommand command = buildFileUploadCommand();
 
+        MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+
         ObjectWriteResponse response = mock(ObjectWriteResponse.class);
-        when(minioConfigProperties.bucketName()).thenReturn("file-upload-test");
-        when(response.etag()).thenReturn("fake-etag");
-        when(response.object()).thenReturn("test.txt");
-        when(response.checksumSHA256()).thenReturn("fake-checksum");
 
-        when(minioClient.putObject(any(PutObjectArgs.class))).thenReturn(response);
+        when(messageDigestFactory.createMessageDigest())
+                .thenReturn(messageDigest);
+        when(minioConfigProperties.bucketName())
+                .thenReturn("file-upload-test");
+        when(response.etag())
+                .thenReturn("fake-etag");
+        when(minioClient.putObject(any(PutObjectArgs.class)))
+                .thenReturn(response);
 
-        UploadObjectResult result = minIOObjectStorageClient.upload(command);
+        UploadObjectResult result =
+                minIOObjectStorageClient.upload(command);
 
         assertThat(result.etag()).isEqualTo("fake-etag");
-        assertThat(result.objectKey()).isEqualTo("test.txt");
-        assertThat(result.checksum()).isEqualTo("fake-checksum");
+        assertThat(result.checksum()).isNotBlank();
 
+        verify(messageDigestFactory).createMessageDigest();
         verify(minioClient).putObject(any(PutObjectArgs.class));
-
     }
 
     @Test
     void whenUploadFailed_thenThrowException() throws Exception {
         FileUploadCommand command = buildFileUploadCommand();
 
+        MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
         when(minioClient.putObject(any(PutObjectArgs.class)))
                 .thenThrow(new IOException("MinIO failed"));
-
+        when(messageDigestFactory.createMessageDigest()).thenReturn(messageDigest);
         when(minioConfigProperties.bucketName()).thenReturn("file-upload-test");
 
         assertThrows(
@@ -76,6 +87,7 @@ class MinIOObjectStorageClientMockTest {
 
         verify(minioClient).putObject(any(PutObjectArgs.class));
     }
+
     private FileUploadCommand buildFileUploadCommand() {
         MockMultipartFile file = new MockMultipartFile(
                 "file",
@@ -86,8 +98,9 @@ class MinIOObjectStorageClientMockTest {
 
         return FileUploadCommand.builder()
                 .file(file)
-                .contentType("text/plain")
-                .originalFileName("test.txt")
+                .contentType(file.getContentType())
+                .size(file.getSize())
+                .originalFileName(file.getOriginalFilename())
                 .build();
     }
 

@@ -4,7 +4,6 @@ import lombok.Builder;
 
 @Builder
 public record UploadObjectResult(
-        String objectKey,
         String etag,
         String checksum
 ) {

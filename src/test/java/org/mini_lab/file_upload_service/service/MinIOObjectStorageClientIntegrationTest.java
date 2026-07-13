@@ -42,6 +42,7 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
                         .upload(FileUploadCommand.builder()
                                 .originalFileName(file.getOriginalFilename())
                                 .contentType(file.getContentType())
+                                .size(file.getSize())
                                 .file(file)
                                 .build());
         assertNotNull(result);
@@ -70,6 +71,7 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
                         FileUploadCommand.builder()
                                 .originalFileName(file.getOriginalFilename())
                                 .contentType(file.getContentType())
+                                .size(file.getSize())
                                 .file(file)
                                 .build()
                 );
@@ -88,7 +90,6 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
             UploadObjectResult result = future.get(30, TimeUnit.SECONDS);
 
             assertNotNull(result);
-            assertNotNull(result.objectKey());
             assertNotNull(result.etag());
 
             results.add(result);
