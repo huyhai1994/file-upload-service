@@ -19,7 +19,7 @@ public class FileRequestVerifyService {
                         .toList();
     }
 
-    private void validate(FileUploadCommand command) {
+    public void validate(FileUploadCommand command) {
         fileValidators.forEach(fileValidator -> fileValidator.validate(command));
     }
 
