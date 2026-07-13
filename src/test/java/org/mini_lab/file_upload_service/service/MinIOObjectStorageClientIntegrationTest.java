@@ -1,7 +1,12 @@
 package org.mini_lab.file_upload_service.service;
 
+import io.minio.MinioClient;
+import io.minio.StatObjectArgs;
+import io.minio.StatObjectResponse;
+import io.minio.errors.*;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.mini_lab.file_upload_service.configuration.MinioConfigProperties;
 import org.mini_lab.file_upload_service.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.dto.UploadObjectResult;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
@@ -9,10 +14,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,6 +35,12 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     MinIOObjectStorageClient minIOObjectStorageClient;
 
+    @Autowired
+    MinioClient minioClient;
+
+    @Autowired
+    MinioConfigProperties minioConfigProperties;
+
     private static @NotNull MockMultipartFile getMockMultipartFile() {
         return new MockMultipartFile(
                 "file",
@@ -34,18 +50,58 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
         );
     }
 
+    private static @NotNull FileUploadCommand getFileUploadCommand(MultipartFile file) {
+        return FileUploadCommand.builder()
+                .originalFileName(file.getOriginalFilename())
+                .contentType(file.getContentType())
+                .size(file.getSize())
+                .file(file)
+                .build();
+    }
+
     @Test
     void uploadSuccess_thenReturnUploadResult() {
         MockMultipartFile file = getMockMultipartFile();
+        FileUploadCommand command = getFileUploadCommand(file);
+        String objectKey = UUID.randomUUID().toString();
         UploadObjectResult result =
                 minIOObjectStorageClient
-                        .upload(FileUploadCommand.builder()
-                                .originalFileName(file.getOriginalFilename())
-                                .contentType(file.getContentType())
-                                .size(file.getSize())
-                                .file(file)
-                                .build());
+                        .upload(objectKey, command);
         assertNotNull(result);
+        StatObjectResponse stat;
+        try {
+            stat = minioClient.statObject(
+                    StatObjectArgs.builder()
+                            .bucket(minioConfigProperties.bucketName())
+                            .object(objectKey)
+                            .build()
+            );
+        } catch (ErrorResponseException | InsufficientDataException | InternalException | InvalidKeyException |
+                 InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException |
+                 XmlParserException e) {
+            throw new RuntimeException(e);
+        }
+
+        assertEquals(objectKey, stat.object());
+        assertEquals(command.size(), stat.size());
+    }
+
+    @Test
+    void deleteSuccess_thenDoesNotThrowException() {
+        FileUploadCommand fileUploadCommand = getFileUploadCommand(getMockMultipartFile());
+        String objectKey = UUID.randomUUID().toString();
+        minIOObjectStorageClient.upload(objectKey, fileUploadCommand);
+
+        assertDoesNotThrow(() -> minIOObjectStorageClient.delete(objectKey));
+        assertThrows(
+                ErrorResponseException.class,
+                () -> minioClient.statObject(
+                        StatObjectArgs.builder()
+                                .bucket(minioConfigProperties.bucketName())
+                                .object(objectKey)
+                                .build()
+                )
+        );
     }
 
     @Test
@@ -67,14 +123,8 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
                 readyLatch.countDown();
                 startLatch.await();
 
-                return minIOObjectStorageClient.upload(
-                        FileUploadCommand.builder()
-                                .originalFileName(file.getOriginalFilename())
-                                .contentType(file.getContentType())
-                                .size(file.getSize())
-                                .file(file)
-                                .build()
-                );
+                return minIOObjectStorageClient.upload(UUID.randomUUID().toString(),
+                        getFileUploadCommand(file));
             });
 
             futures.add(future);

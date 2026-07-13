@@ -3,7 +3,6 @@ package org.mini_lab.file_upload_service.service;
 import io.minio.MinioClient;
 import io.minio.ObjectWriteResponse;
 import io.minio.PutObjectArgs;
-import io.minio.errors.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mini_lab.file_upload_service.component.MessageDigestFactory;
@@ -18,9 +17,8 @@ import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -61,7 +59,7 @@ class MinIOObjectStorageClientMockTest {
                 .thenReturn(response);
 
         UploadObjectResult result =
-                minIOObjectStorageClient.upload(command);
+                minIOObjectStorageClient.upload(UUID.randomUUID().toString(), command);
 
         assertThat(result.etag()).isEqualTo("fake-etag");
         assertThat(result.checksum()).isNotBlank();
@@ -82,7 +80,7 @@ class MinIOObjectStorageClientMockTest {
 
         assertThrows(
                 ObjectStorageException.class,
-                () -> minIOObjectStorageClient.upload(command)
+                () -> minIOObjectStorageClient.upload(UUID.randomUUID().toString(), command)
         );
 
         verify(minioClient).putObject(any(PutObjectArgs.class));

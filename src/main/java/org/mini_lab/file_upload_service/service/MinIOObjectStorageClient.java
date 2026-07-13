@@ -1,8 +1,6 @@
 package org.mini_lab.file_upload_service.service;
 
-import io.minio.MinioClient;
-import io.minio.ObjectWriteResponse;
-import io.minio.PutObjectArgs;
+import io.minio.*;
 import lombok.RequiredArgsConstructor;
 import org.mini_lab.file_upload_service.component.MessageDigestFactory;
 import org.mini_lab.file_upload_service.configuration.MinioConfigProperties;
@@ -24,10 +22,9 @@ public class MinIOObjectStorageClient implements ObjectStorageClient {
     private final MessageDigestFactory messageDigestFactory;
 
     @Override
-    public UploadObjectResult upload(FileUploadCommand command) {
+    public UploadObjectResult upload(String objectKey, FileUploadCommand command) {
         MessageDigest messageDigest = messageDigestFactory.createMessageDigest();
         String contentType = command.contentType();
-        String originalFileName = command.originalFileName();
         String bucket = minioConfigProperties.bucketName();
 
         try (InputStream inputStream = command.file().getInputStream();
@@ -37,7 +34,7 @@ public class MinIOObjectStorageClient implements ObjectStorageClient {
             ObjectWriteResponse response = minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucket)
-                            .object(originalFileName)
+                            .object(objectKey)
                             .stream(digestInput, command.size(), -1)
                             .contentType(contentType)
                             .build()
@@ -55,7 +52,19 @@ public class MinIOObjectStorageClient implements ObjectStorageClient {
     }
 
     @Override
-    public void delete(FileUploadCommand command) {
-
+    public void delete(String objectKey) {
+        try {
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(minioConfigProperties.bucketName())
+                            .object(objectKey)
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new ObjectStorageException(
+                    "Delete object failed: " + objectKey,
+                    e
+            );
+        }
     }
 }
