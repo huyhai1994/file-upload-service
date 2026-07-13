@@ -52,8 +52,9 @@ class FileMetadataCreationServiceIntegrationTest extends AbstractIntegrationTest
 
         return FileUploadCommand.builder()
                 .file(file)
-                .contentType("text/plain")
-                .originalFileName("test.txt")
+                .contentType(file.getContentType())
+                .originalFileName(file.getOriginalFilename())
+                .size(file.getSize())
                 .build();
     }
 }

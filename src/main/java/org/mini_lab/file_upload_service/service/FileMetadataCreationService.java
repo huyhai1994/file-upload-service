@@ -18,10 +18,10 @@ public class FileMetadataCreationService {
     @Transactional
     public FileMetadata createUploadingMetadata(FileUploadCommand command) {
 
-        String fileName = command.file().getOriginalFilename();
+        String fileName = command.originalFileName();
         String contentType = command.contentType();
         String objectKey = objectKeyGenerator.generate();
-        Long size = command.file().getSize();
+        Long size = command.size();
         FileState fileState = FileState.UPLOADING;
 
         FileMetadata fileMetadata = new FileMetadata();

@@ -72,6 +72,7 @@ class FileMetadataCreationServiceMockTest {
                 .file(file)
                 .contentType(file.getContentType())
                 .originalFileName(file.getOriginalFilename())
+                .size(file.getSize())
                 .build();
     }
 }

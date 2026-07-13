@@ -7,6 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 public record FileUploadCommand(
         MultipartFile file,
         String originalFileName,
-        String contentType
+        String contentType,
+        Long size
 ) {
 }
