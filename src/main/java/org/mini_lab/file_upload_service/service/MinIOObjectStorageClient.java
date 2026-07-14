@@ -47,12 +47,13 @@ public class MinIOObjectStorageClient implements ObjectStorageClient {
                     .checksum(checksum)
                     .build();
         } catch (Exception e) {
-            throw new ObjectStorageException("Upload failed", e);
+            throw new ObjectStorageException("Upload object failed, bucket=%s, object key=%s".formatted(bucket, objectKey), e);
         }
     }
 
     @Override
     public void delete(String objectKey) {
+        String bucket = minioConfigProperties.bucketName();
         try {
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
@@ -61,10 +62,7 @@ public class MinIOObjectStorageClient implements ObjectStorageClient {
                             .build()
             );
         } catch (Exception e) {
-            throw new ObjectStorageException(
-                    "Delete object failed: " + objectKey,
-                    e
-            );
+            throw new ObjectStorageException("Delete object failed, bucket=%s, object key=%s".formatted(bucket, objectKey), e);
         }
     }
 }

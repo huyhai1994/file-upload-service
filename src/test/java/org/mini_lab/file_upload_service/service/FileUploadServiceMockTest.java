@@ -7,14 +7,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mini_lab.file_upload_service.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.dto.UploadRequestObjectDTO;
 import org.mini_lab.file_upload_service.entity.FileMetadata;
-import org.mini_lab.file_upload_service.exception.EmptyFileException;
-import org.mini_lab.file_upload_service.exception.InvalidFileExtensionException;
-import org.mini_lab.file_upload_service.exception.InvalidFilenameException;
-import org.mini_lab.file_upload_service.exception.InvalidMimeTypeException;
+import org.mini_lab.file_upload_service.exception.*;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
+
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mini_lab.file_upload_service.support.MockObjectBuilder.*;
@@ -181,4 +180,45 @@ class FileUploadServiceMockTest {
                 fileUploadStateManager
         );
     }
+
+    @Test
+    void whenUploadFails_thenShouldNotMarkCompletedAndShouldHandleFailure() {
+        UploadRequestObjectDTO request =
+                new UploadRequestObjectDTO(getTextContentTypeMultipartFile());
+
+        when(fileUploadRequestExtractor.extract(any(UploadRequestObjectDTO.class)))
+                .thenReturn(command);
+
+        when(fileMetadataCreationService.createUploadingMetadata(command))
+                .thenReturn(fileMetadata);
+
+        when(objectStorageClient.upload(
+                fileMetadata.getObjectKey(),
+                command
+        )).thenThrow(new ObjectStorageException());
+
+        assertThrows(
+                InternalServerException.class,
+                () -> fileUploadService.processUploadFile(request)
+        );
+
+        verify(fileUploadRequestExtractor).extract(request);
+        verify(fileRequestVerifyService).validate(command);
+
+        verify(fileMetadataCreationService)
+                .createUploadingMetadata(command);
+
+        verify(objectStorageClient)
+                .upload(fileMetadata.getObjectKey(), command);
+
+        verify(objectStorageClient)
+                .delete(fileMetadata.getObjectKey());
+
+        verify(fileUploadStateManager)
+                .markFailed(fileMetadata.getId());
+
+        verify(fileUploadStateManager, never())
+                .markCompleted(anyLong(), anyString());
+    }
+
 }

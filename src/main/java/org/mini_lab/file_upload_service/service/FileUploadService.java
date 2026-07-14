@@ -8,6 +8,8 @@ import org.mini_lab.file_upload_service.dto.UploadObjectResult;
 import org.mini_lab.file_upload_service.dto.UploadRequestObjectDTO;
 import org.mini_lab.file_upload_service.entity.FileMetadata;
 import org.mini_lab.file_upload_service.entity.FileState;
+import org.mini_lab.file_upload_service.exception.InternalServerException;
+import org.mini_lab.file_upload_service.exception.ObjectStorageException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -22,7 +24,7 @@ public class FileUploadService {
 
     public FileMetadataResponseDTO processUploadFile(
             UploadRequestObjectDTO request
-    ) throws FileUploadException {
+    ) {
         FileUploadCommand command = fileUploadRequestExtractor.extract(request);
 
         fileRequestVerifyService.validate(command);
@@ -36,23 +38,21 @@ public class FileUploadService {
 
             return buildCompletedResponse(metadata, uploadResult.checksum());
 
-        } catch (Exception uploadProcessException) {
-            handleUploadFailure(metadata, uploadProcessException);
+        } catch (ObjectStorageException objectStorageException) {
 
-            throw new FileUploadException(
-                    "Failed to upload file: " + metadata.getFileName(),
-                    uploadProcessException
-            );
+            handleUploadFailure(metadata, objectStorageException);
+
+            throw new InternalServerException();
         }
     }
 
-    private void handleUploadFailure(
+    public void handleUploadFailure(
             FileMetadata metadata,
             Exception originalException
     ) {
         try {
             objectStorageClient.delete(metadata.getObjectKey());
-        } catch (Exception compensationException) {
+        } catch (ObjectStorageException compensationException) {
             originalException.addSuppressed(compensationException);
         }
 
