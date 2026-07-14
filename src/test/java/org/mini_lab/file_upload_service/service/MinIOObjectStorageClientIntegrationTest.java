@@ -1,5 +1,6 @@
 package org.mini_lab.file_upload_service.service;
 
+import eu.rekawek.toxiproxy.model.ToxicDirection;
 import io.minio.MinioClient;
 import io.minio.StatObjectArgs;
 import io.minio.StatObjectResponse;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.configuration.MinioConfigProperties;
 import org.mini_lab.file_upload_service.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.dto.UploadObjectResult;
+import org.mini_lab.file_upload_service.exception.ObjectStorageException;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -127,6 +129,43 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
 
         executorService.shutdown();
         assertTrue(executorService.awaitTermination(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void whenNetworkIsCut_thenUploadShouldFail() throws IOException {
+        minioProxy.toxics()
+                .bandwidth(
+                        "CUT_UPSTREAM",
+                        ToxicDirection.UPSTREAM,
+                        0
+                );
+
+        minioProxy.toxics()
+                .bandwidth(
+                        "CUT_DOWNSTREAM",
+                        ToxicDirection.DOWNSTREAM,
+                        0
+                );
+
+        try {
+            assertThrows(
+                    ObjectStorageException.class,
+                    () -> minIOObjectStorageClient.upload(
+                            "files/test.txt",
+                            getFileUploadCommand(
+                                    getTextContentTypeMultipartFile()
+                            )
+                    )
+            );
+        } finally {
+            minioProxy.toxics()
+                    .get("CUT_UPSTREAM")
+                    .remove();
+
+            minioProxy.toxics()
+                    .get("CUT_DOWNSTREAM")
+                    .remove();
+        }
     }
 }
 

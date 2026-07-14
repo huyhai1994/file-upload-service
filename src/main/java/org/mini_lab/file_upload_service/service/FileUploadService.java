@@ -1,7 +1,6 @@
 package org.mini_lab.file_upload_service.service;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.mini_lab.file_upload_service.dto.FileMetadataResponseDTO;
 import org.mini_lab.file_upload_service.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.dto.UploadObjectResult;
