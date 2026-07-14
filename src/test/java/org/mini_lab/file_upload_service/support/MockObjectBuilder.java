@@ -2,12 +2,14 @@ package org.mini_lab.file_upload_service.support;
 
 import org.jetbrains.annotations.NotNull;
 import org.mini_lab.file_upload_service.dto.FileUploadCommand;
+import org.mini_lab.file_upload_service.dto.UploadObjectResult;
 import org.mini_lab.file_upload_service.entity.FileMetadata;
 import org.mini_lab.file_upload_service.entity.FileState;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 public class MockObjectBuilder {
     public static @NotNull FileUploadCommand getFileUploadCommand(MultipartFile file) {
@@ -112,4 +114,10 @@ public class MockObjectBuilder {
         return fileMetadata;
     }
 
+    public static UploadObjectResult getUploadObjectResult() {
+        return UploadObjectResult.builder()
+                .etag(UUID.randomUUID().toString())
+                .checksum(UUID.randomUUID().toString())
+                .build();
+    }
 }
