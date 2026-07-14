@@ -11,11 +11,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mock.web.MockMultipartFile;
-
-import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getFileUploadCommand;
+import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getMockTextContentTypeMultipartFile;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,7 +36,7 @@ class FileMetadataCreationServiceMockTest {
     @Test
     void whenCreateUploadingMetadata_thenGenerateObjectKeyAndSaveMetadata() {
         // Given
-        FileUploadCommand command = buildFileUploadCommand();
+        FileUploadCommand command = getFileUploadCommand(getMockTextContentTypeMultipartFile());
 
         when(objectKeyGenerator.generate()).thenReturn(OBJECT_KEY);
 
@@ -60,19 +59,4 @@ class FileMetadataCreationServiceMockTest {
         assertEquals(FileState.UPLOADING, savedMetadata.getStatus());
     }
 
-    private FileUploadCommand buildFileUploadCommand() {
-        MockMultipartFile file = new MockMultipartFile(
-                "file",
-                "test.txt",
-                "text/plain",
-                "hello minio".getBytes(StandardCharsets.UTF_8)
-        );
-
-        return FileUploadCommand.builder()
-                .file(file)
-                .contentType(file.getContentType())
-                .originalFileName(file.getOriginalFilename())
-                .size(file.getSize())
-                .build();
-    }
 }

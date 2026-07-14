@@ -13,15 +13,15 @@ import org.mini_lab.file_upload_service.exception.ObjectStorageException;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getFileUploadCommand;
+import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getMockTextContentTypeMultipartFile;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -43,7 +43,7 @@ class MinIOObjectStorageClientMockTest {
 
     @Test
     void whenUploadSuccess_thenReturnUploadObjectResult() throws Exception {
-        FileUploadCommand command = buildFileUploadCommand();
+        FileUploadCommand command = getFileUploadCommand(getMockTextContentTypeMultipartFile());
 
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
 
@@ -70,7 +70,7 @@ class MinIOObjectStorageClientMockTest {
 
     @Test
     void whenUploadFailed_thenThrowException() throws Exception {
-        FileUploadCommand command = buildFileUploadCommand();
+        FileUploadCommand command = getFileUploadCommand(getMockTextContentTypeMultipartFile());
 
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
         when(minioClient.putObject(any(PutObjectArgs.class)))
@@ -86,20 +86,5 @@ class MinIOObjectStorageClientMockTest {
         verify(minioClient).putObject(any(PutObjectArgs.class));
     }
 
-    private FileUploadCommand buildFileUploadCommand() {
-        MockMultipartFile file = new MockMultipartFile(
-                "file",
-                "test.txt",
-                "text/plain",
-                "hello minio".getBytes(StandardCharsets.UTF_8)
-        );
-
-        return FileUploadCommand.builder()
-                .file(file)
-                .contentType(file.getContentType())
-                .size(file.getSize())
-                .originalFileName(file.getOriginalFilename())
-                .build();
-    }
 
 }
