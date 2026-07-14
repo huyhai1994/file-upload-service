@@ -23,7 +23,7 @@ public class ExtensionValidator implements FileValidator {
     @Override
     public void validate(FileUploadCommand command) {
         List<String> allowedList = extensionPropertiesConfigurations.getAllowedList();
-        String fileName = command.file().getOriginalFilename();
+        String fileName = command.originalFileName();
         String extension = null;
         if (fileName != null) {
             extension = fileName

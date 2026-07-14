@@ -13,7 +13,7 @@ public class FileNameValidator implements FileValidator {
 
     @Override
     public void validate(FileUploadCommand command) {
-        String fileName = command.file().getOriginalFilename();
+        String fileName = command.originalFileName();
         fileNameNotNull(fileName);
     }
 

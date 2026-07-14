@@ -355,6 +355,58 @@ end
   
 @enduml
 ```
+
+1. Extract request
+
+2. Validate
+
+3. Tạo metadata trạng thái UPLOADING và commit
+
+4. Upload object ra MinIO
+
+5. Nếu thành công: cập nhật COMPLETED trong transaction mới
+
+6. Nếu thất bại:
+
+  - cố gắng xóa object để compensation
+
+  - cập nhật FAILED trong transaction mới
+
+
+Luồng hoàn chỉnh
+``` java
+FileUploadService.processUploadFile(request)
+    command = extractor.extract(request)
+    verifyService.verify(command)
+
+    metadata =
+        metadataCreationService.createUploadingMetadata(command)
+        // Transaction 1: INSERT UPLOADING, commit
+
+    try
+        objectStorage.upload(
+            metadata.objectKey,
+            command.inputStream
+        )
+        // No DB transaction
+
+        stateManager.markCompleted(metadata.id)
+        // Transaction 2: UPLOADING -> COMPLETED
+
+    catch uploadException
+        try
+            objectStorage.delete(metadata.objectKey)
+        catch compensationException
+            log compensation failure
+
+        stateManager.markFailed(
+            metadata.id,
+            uploadException
+        )
+        // Transaction 3: UPLOADING -> FAILED
+
+        throw uploadException
+```
 ### 6.5 Validation Rules
 #### 6.5.1 Upload file Trùng
 - phase 1 : cho phép upload file trùng , mỗi lần upload:
@@ -421,51 +473,72 @@ interface FileValidator {
 }  
   
 class EmptyFileValidator  
-class FileSizeValidator  
 class FileNameValidator  
 class ExtensionValidator  
 class MimeTypeValidator  
   
+interface MimeTypeExtractor {  
+    +extract(file: MultipartFile): String  
+}  
+  
 class TikaMimeTypeExtractor  
 class FileUploadCommand  
   
-FileRequestVerifyService --> "1..*" FileValidator  
+FileRequestVerifyService --> "1..*" FileValidator : validators  
 FileRequestVerifyService ..> FileUploadCommand  
+  
 FileValidator ..> FileUploadCommand  
   
 EmptyFileValidator ..|> FileValidator  
-FileSizeValidator ..|> FileValidator  
 FileNameValidator ..|> FileValidator  
 ExtensionValidator ..|> FileValidator  
 MimeTypeValidator ..|> FileValidator  
-MimeTypeValidator --> TikaMimeTypeExtractor: use  
   
+MimeTypeValidator --> "1" MimeTypeExtractor : extractor  
+TikaMimeTypeExtractor ..|> MimeTypeExtractor  
   
+note right of EmptyFileValidator  
+order = 10  
+end note  
+  
+note right of FileNameValidator  
+order = 20  
+end note  
+  
+note right of ExtensionValidator  
+order = 30  
+end note  
+  
+note right of MimeTypeValidator  
+order = 40  
+end note  
   
 @enduml
 ```
 
-Khi upload file, hệ thống cần thực hiện nhiều bước kiểm tra khác nhau. Vì vậy, dự án áp dụng **Chain of Responsibility Pattern** để tổ chức quy trình validation.
+Khi upload file, hệ thống cần thực hiện nhiều bước kiểm tra khác nhau. Vì vậy, dự án tổ chức quy trình validation theo mô hình **Validation Pipeline**, trong đó mỗi bước kiểm tra được triển khai dưới dạng một **Strategy** thông qua interface `FileValidator`.
 
-File sẽ lần lượt đi qua các lớp triển khai `FileValidator`. Mỗi validator chịu trách nhiệm kiểm tra một điều kiện cụ thể, chẳng hạn như file rỗng, kích thước file, tên file, extension hoặc MIME type.
+`FileRequestVerifyService` đóng vai trò điều phối (orchestrator), lấy danh sách các `FileValidator`, sắp xếp theo `order` và thực thi lần lượt từng validator.
 
-Các validator được gán thứ tự thực thi bằng `order`. Thứ tự ưu tiên được sắp xếp dựa trên chi phí xử lý, từ thấp đến cao. Những kiểm tra đơn giản và ít tốn tài nguyên sẽ được thực hiện trước; các kiểm tra cần đọc hoặc phân tích nội dung file sẽ được thực hiện sau.
+Mỗi validator chỉ chịu trách nhiệm cho một quy tắc kiểm tra cụ thể, chẳng hạn như file rỗng, kích thước file, tên file, extension hoặc MIME type. Nếu một validator phát hiện file không hợp lệ, nó sẽ ném exception và quá trình validation sẽ dừng ngay lập tức.
 
-Cách thiết kế này giúp hệ thống **fail fast**, tránh thực hiện các bước kiểm tra tốn tài nguyên khi file đã không hợp lệ ở những điều kiện cơ bản. Đồng thời, hệ thống có thể dễ dàng mở rộng bằng cách bổ sung validator mới mà không cần thay đổi luồng validation hiện tại.
+Các validator được gán thứ tự thực thi thông qua `order`. Thứ tự này được thiết kế dựa trên chi phí xử lý, từ thấp đến cao. Những kiểm tra đơn giản và ít tốn tài nguyên sẽ được thực hiện trước, trong khi các kiểm tra cần đọc hoặc phân tích nội dung file (ví dụ: xác định MIME type bằng Apache Tika) sẽ được thực hiện sau.
 
-| Validation                    |     |
-| ----------------------------- | --- |
-| File tồn tại                  |     |
-| File size                     |     |
-| Filename hợp lệ               |     |
-| MIME type (Apache Tika)       |     |
-| Magic Number                  |     |
-| Extension whitelist           |     |
-| Generate Object Key           |     |
-| Metadata validation           |     |
-| Upload exception handling     |     |
-| Compensation khi DB/MinIO lỗi |     |
-| Logging + RequestId           |     |
+Cách thiết kế này giúp hệ thống **fail fast**, tránh thực hiện các bước kiểm tra tốn tài nguyên khi file đã không hợp lệ ở những điều kiện cơ bản. Đồng thời, hệ thống có thể dễ dàng mở rộng bằng cách bổ sung một `FileValidator` mới mà không cần thay đổi luồng validation hiện tại, đảm bảo tuân thủ **Open/Closed Principle (OCP)**.
+
+| Validation                    | Order |
+| ----------------------------- | ----- |
+| File tồn tại                  | 10    |
+| File size                     |       |
+| Filename hợp lệ               | 20    |
+| MIME type (Apache Tika)       | 40    |
+| Magic Number                  |       |
+| Extension whitelist           | 30    |
+| Generate Object Key           |       |
+| Metadata validation           |       |
+| Upload exception handling     |       |
+| Compensation khi DB/MinIO lỗi |       |
+| Logging + RequestId           |       |
 ### 6.10 DB Constraints / Index
 ### 6.11 Query
 ### 6.12 Error Handling
@@ -475,8 +548,8 @@ Cách thiết kế này giúp hệ thống **fail fast**, tránh thực hiện c
 | File bị rỗng           |         400 | EmptyFileException            |
 | Tên File Không hợp lệ  |         400 | InvalidFilenameException      |
 | Đuôi file không hợp lệ |         400 | InvalidFileExtensionException |
-| Mime file không hợp lê |         400 | MimeTypeValidator             |
-|                        |             |                               |
+| Mime file không hợp lê |         400 | InvalidMimeTypeException      |
+| đọc stream thất bại    |             | FileReadException             |
 ### 6.13 Test Cases
 #### 6.13.1 `FileMetadataRepository`
 ##### 6.13.1.1 Case nếu
@@ -490,5 +563,6 @@ Cách thiết kế này giúp hệ thống **fail fast**, tránh thực hiện c
 ### 8.3 Alerting
 
 ## 9 Design Decisions / Trade-offs
+
 
 
