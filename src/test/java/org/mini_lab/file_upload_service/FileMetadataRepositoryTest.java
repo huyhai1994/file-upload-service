@@ -46,9 +46,10 @@ class FileMetadataRepositoryTest extends AbstractIntegrationTest {
         FileMetadata fileMetadata = buildValidCompletedFileMetadata();
         FileMetadata persistedUploadingFileMetadata = fileMetadataRepository.saveAndFlush(fileMetadata);
         Long fileId = persistedUploadingFileMetadata.getId();
+        String checksum = "fake-checksum";
         entityManager.flush();
         entityManager.clear();
-        assertEquals(0, fileMetadataRepository.markCompletedIfUploading(fileId));
+        assertEquals(0, fileMetadataRepository.markCompletedIfUploading(fileId, checksum));
     }
 
     @Test
@@ -59,7 +60,8 @@ class FileMetadataRepositoryTest extends AbstractIntegrationTest {
         entityManager.flush();
         entityManager.clear();
 
-        assertEquals(1, fileMetadataRepository.markCompletedIfUploading(fileId));
+        String checksum = "fake-checksum";
+        assertEquals(1, fileMetadataRepository.markCompletedIfUploading(fileId, checksum));
     }
 
     @Test
@@ -70,7 +72,8 @@ class FileMetadataRepositoryTest extends AbstractIntegrationTest {
         entityManager.flush();
         entityManager.clear();
 
-        assertEquals(0, fileMetadataRepository.markCompletedIfUploading(fileId));
+        String checksum = "fake-checksum";
+        assertEquals(0, fileMetadataRepository.markCompletedIfUploading(fileId, checksum));
     }
 
 
