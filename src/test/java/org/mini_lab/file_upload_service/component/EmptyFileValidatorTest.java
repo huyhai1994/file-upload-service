@@ -17,7 +17,7 @@ class EmptyFileValidatorTest {
     @Test
     void whenFileIsEmpty_thenThrowEmptyFileException() {
         FileUploadCommand command =
-                getFileUploadCommand(createEmptyMultipartFile());
+                getFileUploadCommand(getEmptyMultipartFile());
 
         assertThrows(
                 EmptyFileException.class,
@@ -40,7 +40,7 @@ class EmptyFileValidatorTest {
     @Test
     void whenFileIsNotEmpty_thenValidationDoesNotThrow() {
         FileUploadCommand command =
-                getFileUploadCommand(getMockTextContentTypeMultipartFile());
+                getFileUploadCommand(getTextContentTypeMultipartFile());
 
         assertDoesNotThrow(
                 () -> emptyFileValidator.validate(command)

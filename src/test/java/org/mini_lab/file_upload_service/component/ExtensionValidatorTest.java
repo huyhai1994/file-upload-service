@@ -19,14 +19,14 @@ class ExtensionValidatorTest extends AbstractIntegrationTest {
 
     @Test
     void whenExtensionInAllowedList_thenNotThrowException() {
-        assertDoesNotThrow(() -> extensionValidator.validate(getFileUploadCommand(getMockTextContentTypeMultipartFile())));
+        assertDoesNotThrow(() -> extensionValidator.validate(getFileUploadCommand(getTextContentTypeMultipartFile())));
     }
 
     @Test
     void whenExtensionIsNotInAllowedList_thenThrowsException() {
         assertThrows(InvalidFileExtensionException.class,
                 () -> extensionValidator.validate(
-                        getFileUploadCommand(createNonValidExtensionMultipartFile())));
+                        getFileUploadCommand(getNonValidExtensionMultipartFile())));
     }
 
 }

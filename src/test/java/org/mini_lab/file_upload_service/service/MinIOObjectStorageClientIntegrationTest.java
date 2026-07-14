@@ -23,7 +23,7 @@ import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getFileUploadCommand;
-import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getMockTextContentTypeMultipartFile;
+import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getTextContentTypeMultipartFile;
 
 
 @SpringBootTest
@@ -41,7 +41,7 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void uploadSuccess_thenReturnUploadResult() {
-        FileUploadCommand command = getFileUploadCommand(getMockTextContentTypeMultipartFile());
+        FileUploadCommand command = getFileUploadCommand(getTextContentTypeMultipartFile());
         String objectKey = UUID.randomUUID().toString();
         UploadObjectResult result =
                 minIOObjectStorageClient
@@ -67,7 +67,7 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void deleteSuccess_thenDoesNotThrowException() {
-        FileUploadCommand fileUploadCommand = getFileUploadCommand(getMockTextContentTypeMultipartFile());
+        FileUploadCommand fileUploadCommand = getFileUploadCommand(getTextContentTypeMultipartFile());
         String objectKey = UUID.randomUUID().toString();
         minIOObjectStorageClient.upload(objectKey, fileUploadCommand);
 
@@ -102,7 +102,7 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
                 startLatch.await();
 
                 return minIOObjectStorageClient.upload(UUID.randomUUID().toString(),
-                        getFileUploadCommand(getMockTextContentTypeMultipartFile()));
+                        getFileUploadCommand(getTextContentTypeMultipartFile()));
             });
 
             futures.add(future);

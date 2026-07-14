@@ -13,13 +13,13 @@ class FileNameValidatorTest {
     @Test
     void whenFileNameIsEmpty_shouldThrowInvalidFilenameException() {
         assertThrows(InvalidFilenameException.class,
-                () -> fileNameValidator.validate(getFileUploadCommand(createEmptyFilenameMultipartFile())));
+                () -> fileNameValidator.validate(getFileUploadCommand(getEmptyFilenameMultipartFile())));
     }
 
     @Test
     void whenFileNameNotEmpty_doesNotThrowException() {
         assertDoesNotThrow(
-                () -> fileNameValidator.validate(getFileUploadCommand(getMockTextContentTypeMultipartFile())));
+                () -> fileNameValidator.validate(getFileUploadCommand(getTextContentTypeMultipartFile())));
     }
 
 }

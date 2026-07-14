@@ -21,7 +21,7 @@ import java.util.UUID;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getFileUploadCommand;
-import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getMockTextContentTypeMultipartFile;
+import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getTextContentTypeMultipartFile;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -43,7 +43,7 @@ class MinIOObjectStorageClientMockTest {
 
     @Test
     void whenUploadSuccess_thenReturnUploadObjectResult() throws Exception {
-        FileUploadCommand command = getFileUploadCommand(getMockTextContentTypeMultipartFile());
+        FileUploadCommand command = getFileUploadCommand(getTextContentTypeMultipartFile());
 
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
 
@@ -70,7 +70,7 @@ class MinIOObjectStorageClientMockTest {
 
     @Test
     void whenUploadFailed_thenThrowException() throws Exception {
-        FileUploadCommand command = getFileUploadCommand(getMockTextContentTypeMultipartFile());
+        FileUploadCommand command = getFileUploadCommand(getTextContentTypeMultipartFile());
 
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
         when(minioClient.putObject(any(PutObjectArgs.class)))

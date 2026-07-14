@@ -17,7 +17,7 @@ public class MockObjectBuilder {
                 .build();
     }
 
-    public static MockMultipartFile createEmptyMultipartFile() {
+    public static @NotNull MockMultipartFile getEmptyMultipartFile() {
         return new MockMultipartFile(
                 "file",
                 "test.txt",
@@ -26,7 +26,7 @@ public class MockObjectBuilder {
         );
     }
 
-    public static @NotNull MockMultipartFile getMockTextContentTypeMultipartFile() {
+    public static @NotNull MockMultipartFile getTextContentTypeMultipartFile() {
         return new MockMultipartFile(
                 "file",
                 "test.txt",
@@ -35,7 +35,7 @@ public class MockObjectBuilder {
         );
     }
 
-    public static MockMultipartFile createNonValidExtensionMultipartFile() {
+    public static @NotNull MockMultipartFile getNonValidExtensionMultipartFile() {
         return new MockMultipartFile(
                 "file",
                 "test.sh",
@@ -44,7 +44,7 @@ public class MockObjectBuilder {
         );
     }
 
-    public static MockMultipartFile createEmptyFilenameMultipartFile() {
+    public static @NotNull MockMultipartFile getEmptyFilenameMultipartFile() {
         return new MockMultipartFile(
                 "file",
                 "",
@@ -53,7 +53,7 @@ public class MockObjectBuilder {
         );
     }
 
-    public static @NotNull MockMultipartFile getMismatchMimeFile() {
+    public static @NotNull MockMultipartFile getMismatchMimeMultipartFile() {
         byte[] pngHeader = new byte[]{
                 (byte) 0x89, 0x50, 0x4E, 0x47,
                 0x0D, 0x0A, 0x1A, 0x0A

@@ -4,8 +4,8 @@ import org.apache.tika.Tika;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getMismatchMimeFile;
-import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getMockTextContentTypeMultipartFile;
+import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getMismatchMimeMultipartFile;
+import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getTextContentTypeMultipartFile;
 
 
 class TikaMimeTypeExtractorTest {
@@ -13,12 +13,12 @@ class TikaMimeTypeExtractorTest {
 
     @Test
     void whenExtractMimeType_returnTextPlain() {
-        assertEquals("text/plain", tikaMimeTypeExtractor.extract(getMockTextContentTypeMultipartFile()));
+        assertEquals("text/plain", tikaMimeTypeExtractor.extract(getTextContentTypeMultipartFile()));
     }
 
     @Test
     void whenExtensionIsTxtButContentIsPng_thenReturnImagePng() {
-        assertEquals("image/png", tikaMimeTypeExtractor.extract(getMismatchMimeFile()));
+        assertEquals("image/png", tikaMimeTypeExtractor.extract(getMismatchMimeMultipartFile()));
     }
 
 

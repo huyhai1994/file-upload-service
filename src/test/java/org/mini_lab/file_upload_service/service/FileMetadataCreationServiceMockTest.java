@@ -14,7 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getFileUploadCommand;
-import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getMockTextContentTypeMultipartFile;
+import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getTextContentTypeMultipartFile;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,7 +36,7 @@ class FileMetadataCreationServiceMockTest {
     @Test
     void whenCreateUploadingMetadata_thenGenerateObjectKeyAndSaveMetadata() {
         // Given
-        FileUploadCommand command = getFileUploadCommand(getMockTextContentTypeMultipartFile());
+        FileUploadCommand command = getFileUploadCommand(getTextContentTypeMultipartFile());
 
         when(objectKeyGenerator.generate()).thenReturn(OBJECT_KEY);
 

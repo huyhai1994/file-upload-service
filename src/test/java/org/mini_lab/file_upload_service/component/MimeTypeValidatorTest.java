@@ -8,7 +8,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getFileUploadCommand;
-import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getMockTextContentTypeMultipartFile;
+import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getTextContentTypeMultipartFile;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -19,7 +19,7 @@ class MimeTypeValidatorTest extends AbstractIntegrationTest {
 
     @Test
     void test() {
-        assertDoesNotThrow(() -> mimeTypeValidator.validate(getFileUploadCommand(getMockTextContentTypeMultipartFile())));
+        assertDoesNotThrow(() -> mimeTypeValidator.validate(getFileUploadCommand(getTextContentTypeMultipartFile())));
     }
 
 }

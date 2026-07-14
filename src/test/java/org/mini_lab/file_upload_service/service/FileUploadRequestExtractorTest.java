@@ -12,7 +12,7 @@ class FileUploadRequestExtractorTest {
 
     @Test
     void shouldBeExtractToFileUploadCommand() {
-        UploadRequestObjectDTO uploadRequestObjectDTO = new UploadRequestObjectDTO(MockObjectBuilder.getMockTextContentTypeMultipartFile());
+        UploadRequestObjectDTO uploadRequestObjectDTO = new UploadRequestObjectDTO(MockObjectBuilder.getTextContentTypeMultipartFile());
         FileUploadCommand uploadCommand = fileUploadRequestExtractor.extract(uploadRequestObjectDTO);
         assertEquals("test.txt", uploadCommand.originalFileName());
         assertEquals("text/plain", uploadCommand.contentType());
