@@ -9,6 +9,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.containers.ToxiproxyContainer;
 import org.testcontainers.utility.DockerImageName;
 
+
 @Testcontainers
 public class AbstractIntegrationTest {
 
@@ -66,16 +67,18 @@ public class AbstractIntegrationTest {
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", mysqldb::getJdbcUrl);
         registry.add("spring.datasource.username", mysqldb::getUsername);
         registry.add("spring.datasource.password", mysqldb::getPassword);
         registry.add(
                 "spring.datasource.url",
-                () -> String.format("jdbc:mysql://%s:%d/file_upload_service_test",
+                () -> String.format("jdbc:mysql://%s:%d/%s?connectTimeout=%d&socketTimeout=%d&tcpKeepAlive=%b",
                         toxiProxyContainer.getHost(),
-                        mysqlProxy.getProxyPort())
+                        mysqlProxy.getProxyPort(),
+                        MYSQL_DATABASE_NAME,
+                        5000,
+                        5000,
+                        false)
         );
-
         registry.add("minio.access-key", miniostorage::getUserName);
         registry.add("minio.secret-key", miniostorage::getPassword);
         registry.add("minio.bucket-name", () -> MINIO_BUCKET_NAME);
@@ -84,4 +87,5 @@ public class AbstractIntegrationTest {
                 () -> String.format("http://%s:%d", toxiProxyContainer.getHost(), minioProxy.getProxyPort())
         );
     }
+
 }
