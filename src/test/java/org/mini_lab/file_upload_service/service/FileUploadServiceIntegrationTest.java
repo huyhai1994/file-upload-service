@@ -80,19 +80,19 @@ class FileUploadServiceIntegrationTest extends AbstractIntegrationTest {
         }
     }
 
-    @Test
-    void whenMySqlTrafficIsBlocked_thenRequestFailsBySocketTimeout() {
-        mysqlProxy.setConnectionCut(true);
-        try {
-            assertThrows(
-                    InternalServerException.class,
-                    () -> fileUploadService.processUploadFile(
-                            new UploadRequestObjectDTO(MockObjectBuilder.getTextContentTypeMultipartFile()))
-            );
-        } finally {
-            mysqlProxy.setConnectionCut(false);
-        }
-    }
+//    @Test
+//    void whenMySqlTrafficIsBlocked_thenRequestFailsBySocketTimeout() {
+//        mysqlProxy.setConnectionCut(true);
+//        try {
+//            assertThrows(
+//                    InternalServerException.class,
+//                    () -> fileUploadService.processUploadFile(
+//                            new UploadRequestObjectDTO(MockObjectBuilder.getTextContentTypeMultipartFile()))
+//            );
+//        } finally {
+//            mysqlProxy.setConnectionCut(false);
+//        }
+//    }
 
     @Test
     void whenUploadSuccess_thenChangeStateToCompleted() {

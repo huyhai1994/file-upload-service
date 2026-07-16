@@ -1,9 +1,9 @@
 package org.mini_lab.file_upload_service.support;
 
 
+import eu.rekawek.toxiproxy.Proxy;
 import eu.rekawek.toxiproxy.model.ToxicDirection;
 import lombok.extern.slf4j.Slf4j;
-import org.testcontainers.containers.ToxiproxyContainer;
 
 import java.io.IOException;
 
@@ -12,9 +12,9 @@ public class TrafficBlockedSimulationTools implements AutoCloseable {
     public static final String CUT_UPSTREAM = "CUT_UPSTREAM";
     public static final String CUT_DOWNSTREAM = "CUT_DOWNSTREAM";
 
-    private final ToxiproxyContainer.ContainerProxy proxy;
+    private final Proxy proxy;
 
-    private TrafficBlockedSimulationTools(ToxiproxyContainer.ContainerProxy proxy) throws IOException {
+    private TrafficBlockedSimulationTools(Proxy proxy) throws IOException {
         this.proxy = proxy;
 
         proxy.toxics().bandwidth(
@@ -30,7 +30,7 @@ public class TrafficBlockedSimulationTools implements AutoCloseable {
         );
     }
 
-    public static TrafficBlockedSimulationTools applyTo(ToxiproxyContainer.ContainerProxy proxy) throws IOException {
+    public static TrafficBlockedSimulationTools applyTo(Proxy proxy) throws IOException {
         return new TrafficBlockedSimulationTools(proxy);
     }
 
