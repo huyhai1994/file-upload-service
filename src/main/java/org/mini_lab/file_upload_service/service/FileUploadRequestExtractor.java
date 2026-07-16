@@ -11,6 +11,7 @@ public class FileUploadRequestExtractor {
                 .file(request.file())
                 .originalFileName(request.file().getOriginalFilename())
                 .contentType(request.file().getContentType())
+                .size(request.file().getSize())
                 .build();
     }
 }

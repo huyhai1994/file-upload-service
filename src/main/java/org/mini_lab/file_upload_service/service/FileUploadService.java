@@ -1,7 +1,7 @@
 package org.mini_lab.file_upload_service.service;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.tomcat.util.http.fileupload.FileUploadException;
+import org.hibernate.TransactionException;
 import org.mini_lab.file_upload_service.dto.FileMetadataResponseDTO;
 import org.mini_lab.file_upload_service.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.dto.UploadObjectResult;
@@ -10,7 +10,9 @@ import org.mini_lab.file_upload_service.entity.FileMetadata;
 import org.mini_lab.file_upload_service.entity.FileState;
 import org.mini_lab.file_upload_service.exception.InternalServerException;
 import org.mini_lab.file_upload_service.exception.ObjectStorageException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.CannotCreateTransactionException;
 
 @Service
 @RequiredArgsConstructor
@@ -25,25 +27,46 @@ public class FileUploadService {
     public FileMetadataResponseDTO processUploadFile(
             UploadRequestObjectDTO request
     ) {
-        FileUploadCommand command = fileUploadRequestExtractor.extract(request);
+        FileUploadCommand command =
+                fileUploadRequestExtractor.extract(request);
 
         fileRequestVerifyService.validate(command);
 
-        FileMetadata metadata = fileMetadataCreationService.createUploadingMetadata(command);
+        FileMetadata metadata;
 
         try {
-            UploadObjectResult uploadResult = objectStorageClient.upload(metadata.getObjectKey(), command);
-
-            fileUploadStateManager.markCompleted(metadata.getId(), uploadResult.checksum());
-
-            return buildCompletedResponse(metadata, uploadResult.checksum());
-
-        } catch (ObjectStorageException objectStorageException) {
-
-            handleUploadFailure(metadata, objectStorageException);
-
+            metadata =
+                    fileMetadataCreationService.createUploadingMetadata(command);
+        } catch (DataAccessException | TransactionException | CannotCreateTransactionException exception) {
             throw new InternalServerException();
         }
+
+        UploadObjectResult uploadResult;
+
+        try {
+            uploadResult = objectStorageClient.upload(
+                    metadata.getObjectKey(),
+                    command
+            );
+        } catch (ObjectStorageException exception) {
+            handleUploadFailure(metadata, exception);
+            throw new InternalServerException();
+        }
+
+        try {
+            fileUploadStateManager.markCompleted(
+                    metadata.getId(),
+                    uploadResult.checksum()
+            );
+        } catch (DataAccessException | TransactionException | CannotCreateTransactionException exception) {
+            handleUploadFailure(metadata, exception);
+            throw new InternalServerException();
+        }
+
+        return buildCompletedResponse(
+                metadata,
+                uploadResult.checksum()
+        );
     }
 
     public void handleUploadFailure(

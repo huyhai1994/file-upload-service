@@ -1,6 +1,5 @@
 package org.mini_lab.file_upload_service.service;
 
-import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,7 +12,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mini_lab.file_upload_service.support.MockObjectBuilder.*;
@@ -44,15 +42,13 @@ class FileUploadServiceMockTest {
 
     private FileUploadCommand command;
 
-    private MockMultipartFile file;
-
     private FileMetadata fileMetadata;
 
     private UploadRequestObjectDTO uploadRequestObjectDTO;
 
     @BeforeEach
     void setUp() {
-        file = getTextContentTypeMultipartFile();
+        MockMultipartFile file = getTextContentTypeMultipartFile();
         command = getFileUploadCommand(file);
         fileMetadata = getValidUploadingFileMetadata();
         fileMetadata.setId(1L);
@@ -60,7 +56,7 @@ class FileUploadServiceMockTest {
     }
 
     @Test
-    void whenUploadAndWriteMetadataSuccess_thenMarkCompleted() throws FileUploadException {
+    void whenUploadAndWriteMetadataSuccess_thenMarkCompleted() {
 
         when(fileUploadRequestExtractor.extract(any(UploadRequestObjectDTO.class)))
                 .thenReturn(command);

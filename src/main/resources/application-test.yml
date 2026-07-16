@@ -6,6 +6,8 @@ spring:
       maximum-pool-size: 5
       minimum-idle: 1
       idle-timeout: 300000
+      connection-timeout: 5000
+      max-lifetime: 5000
   jpa:
     hibernate:
       ddl-auto: validate
@@ -26,6 +28,9 @@ minio:
   access-key: minio
   secret-key: minio123
   bucket-name: test-bucket
+  connect-timeout: 10
+  read-timeout: 10
+  write-timeout: 10
 file:
   extension:
     allowed-list:

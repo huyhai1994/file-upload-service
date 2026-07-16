@@ -8,7 +8,9 @@ import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.configuration.MinioConfigProperties;
 import org.mini_lab.file_upload_service.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.dto.UploadObjectResult;
+import org.mini_lab.file_upload_service.exception.ObjectStorageException;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
+import org.mini_lab.file_upload_service.support.TrafficBlockedSimulationTools;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -127,6 +129,22 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
 
         executorService.shutdown();
         assertTrue(executorService.awaitTermination(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void whenTrafficIsBlocked_thenUploadShouldFail() throws IOException {
+
+        try (TrafficBlockedSimulationTools ignored = TrafficBlockedSimulationTools.applyTo(minioProxy)) {
+            assertThrows(
+                    ObjectStorageException.class,
+                    () -> minIOObjectStorageClient.upload(
+                            "files/test.txt",
+                            getFileUploadCommand(
+                                    getTextContentTypeMultipartFile()
+                            )
+                    )
+            );
+        }
     }
 }
 
