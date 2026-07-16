@@ -1,6 +1,5 @@
 package org.mini_lab.file_upload_service.service;
 
-import eu.rekawek.toxiproxy.model.ToxicDirection;
 import io.minio.MinioClient;
 import io.minio.StatObjectArgs;
 import io.minio.StatObjectResponse;
@@ -11,6 +10,7 @@ import org.mini_lab.file_upload_service.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.dto.UploadObjectResult;
 import org.mini_lab.file_upload_service.exception.ObjectStorageException;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
+import org.mini_lab.file_upload_service.support.NetworkFailureSimulationTools;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -132,22 +132,9 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void whenNetworkIsCut_thenUploadShouldFail() throws IOException {
-        minioProxy.toxics()
-                .bandwidth(
-                        "CUT_UPSTREAM",
-                        ToxicDirection.UPSTREAM,
-                        0
-                );
+    void whenTrafficIsBlocked_thenUploadShouldFail() throws IOException {
 
-        minioProxy.toxics()
-                .bandwidth(
-                        "CUT_DOWNSTREAM",
-                        ToxicDirection.DOWNSTREAM,
-                        0
-                );
-
-        try {
+        try (NetworkFailureSimulationTools ignored = NetworkFailureSimulationTools.applyTo(minioProxy)) {
             assertThrows(
                     ObjectStorageException.class,
                     () -> minIOObjectStorageClient.upload(
@@ -157,14 +144,6 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
                             )
                     )
             );
-        } finally {
-            minioProxy.toxics()
-                    .get("CUT_UPSTREAM")
-                    .remove();
-
-            minioProxy.toxics()
-                    .get("CUT_DOWNSTREAM")
-                    .remove();
         }
     }
 }

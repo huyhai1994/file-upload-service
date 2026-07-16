@@ -8,13 +8,13 @@ import org.testcontainers.containers.ToxiproxyContainer;
 import java.io.IOException;
 
 @Slf4j
-public class NetworkCut implements AutoCloseable {
+public class NetworkFailureSimulationTools implements AutoCloseable {
     public static final String CUT_UPSTREAM = "CUT_UPSTREAM";
     public static final String CUT_DOWNSTREAM = "CUT_DOWNSTREAM";
 
     private final ToxiproxyContainer.ContainerProxy proxy;
 
-    private NetworkCut(ToxiproxyContainer.ContainerProxy proxy) throws IOException {
+    private NetworkFailureSimulationTools(ToxiproxyContainer.ContainerProxy proxy) throws IOException {
         this.proxy = proxy;
 
         proxy.toxics().bandwidth(
@@ -30,8 +30,8 @@ public class NetworkCut implements AutoCloseable {
         );
     }
 
-    public static NetworkCut applyTo(ToxiproxyContainer.ContainerProxy proxy) throws IOException {
-        return new NetworkCut(proxy);
+    public static NetworkFailureSimulationTools applyTo(ToxiproxyContainer.ContainerProxy proxy) throws IOException {
+        return new NetworkFailureSimulationTools(proxy);
     }
 
     @Override
