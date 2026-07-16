@@ -28,6 +28,9 @@ minio:
   access-key: minio
   secret-key: minio123
   bucket-name: test-bucket
+  connect-timeout: 10
+  read-timeout: 10
+  write-timeout: 10
 file:
   extension:
     allowed-list:

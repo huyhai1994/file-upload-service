@@ -10,7 +10,7 @@ import org.mini_lab.file_upload_service.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.dto.UploadObjectResult;
 import org.mini_lab.file_upload_service.exception.ObjectStorageException;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
-import org.mini_lab.file_upload_service.support.NetworkFailureSimulationTools;
+import org.mini_lab.file_upload_service.support.TrafficBlockedSimulationTools;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -134,7 +134,7 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
     @Test
     void whenTrafficIsBlocked_thenUploadShouldFail() throws IOException {
 
-        try (NetworkFailureSimulationTools ignored = NetworkFailureSimulationTools.applyTo(minioProxy)) {
+        try (TrafficBlockedSimulationTools ignored = TrafficBlockedSimulationTools.applyTo(minioProxy)) {
             assertThrows(
                     ObjectStorageException.class,
                     () -> minIOObjectStorageClient.upload(

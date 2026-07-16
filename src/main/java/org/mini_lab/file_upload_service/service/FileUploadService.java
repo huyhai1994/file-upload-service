@@ -10,6 +10,7 @@ import org.mini_lab.file_upload_service.entity.FileState;
 import org.mini_lab.file_upload_service.exception.InternalServerException;
 import org.mini_lab.file_upload_service.exception.ObjectStorageException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.CannotCreateTransactionException;
 
 @Service
 @RequiredArgsConstructor
@@ -27,8 +28,12 @@ public class FileUploadService {
         FileUploadCommand command = fileUploadRequestExtractor.extract(request);
 
         fileRequestVerifyService.validate(command);
-
-        FileMetadata metadata = fileMetadataCreationService.createUploadingMetadata(command);
+        FileMetadata metadata;
+        try {
+            metadata = fileMetadataCreationService.createUploadingMetadata(command);
+        } catch (CannotCreateTransactionException exception) {
+            throw new InternalServerException();
+        }
 
         try {
             UploadObjectResult uploadResult = objectStorageClient.upload(metadata.getObjectKey(), command);
@@ -42,6 +47,7 @@ public class FileUploadService {
             handleUploadFailure(metadata, objectStorageException);
 
             throw new InternalServerException();
+
         }
     }
 
