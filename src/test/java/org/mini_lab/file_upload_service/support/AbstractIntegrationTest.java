@@ -42,8 +42,7 @@ public abstract class AbstractIntegrationTest {
                 .withUsername("test")
                 .withPassword("test")
                 .withNetwork(NETWORK)
-                .withNetworkAliases("mysql")
-                .withReuse(true);
+                .withNetworkAliases("mysql");
 
         minioStorage = new MinIOContainer(
                 "minio/minio:RELEASE.2023-09-04T19-57-37Z"
@@ -51,13 +50,12 @@ public abstract class AbstractIntegrationTest {
                 .withUserName("testuser")
                 .withPassword("testpassword")
                 .withNetwork(NETWORK)
-                .withNetworkAliases("minio")
-                .withReuse(true);
+                .withNetworkAliases("minio");
 
         toxiproxyContainer = new ToxiproxyContainer(
                 "ghcr.io/shopify/toxiproxy:2.5.0"
         ).withNetwork(NETWORK);
-        
+
         mysqlDb.start();
         minioStorage.start();
         toxiproxyContainer.start();
