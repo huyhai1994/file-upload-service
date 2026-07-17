@@ -539,20 +539,179 @@ Cách thiết kế này giúp hệ thống **fail fast**, tránh thực hiện c
 | Upload exception handling     |       |
 | Compensation khi DB/MinIO lỗi |       |
 | Logging + RequestId           |       |
-### 6.10 DB Constraints / Index
-### 6.11 Query
-### 6.12 Error Handling
+### 6.10 File Upload Process
+#### 6.10.1 Định nghĩa mệnh đề
+Gọi
+- E: Extract request thành công
+- V: Validate file thành công
+- M: Tạo metadata trạng thái `UPLOADING` thành công
+- U: Upload object lên MinIO thành công
+- C: Cập nhật metadata thành `COMPLETED` thành công
+- D: Xóa object compensation thành công
+- F: Cập nhật metadata thành `FAILED` thành công
+- R: Trả về `FileMetadataResponseDTO`
+- I: Ném `InternalServerException`
 
-| Case                   | HTTP Status | Exception                     |
-| ---------------------- | ----------: | ----------------------------- |
-| File bị rỗng           |         400 | EmptyFileException            |
-| Tên File Không hợp lệ  |         400 | InvalidFilenameException      |
-| Đuôi file không hợp lệ |         400 | InvalidFileExtensionException |
-| Mime file không hợp lê |         400 | InvalidMimeTypeException      |
-| đọc stream thất bại    |             | FileReadException             |
-### 6.13 Test Cases
-#### 6.13.1 `FileMetadataRepository`
-##### 6.13.1.1 Case nếu
+#### 6.10.2 Upload thành công
+Nếu extract, validate, tạo metadata, upload và mark completed đều thành công thì trả về response.
+$$
+E \land V \land M \land U \land C \rightarrow R
+$$
+#### 6.10.3 Fail-fast trước khi upload
+Extract phải thành công thì mới validate:
+$$
+E \rightarrow V
+$$
+Validate thành công thì mới tạo metadata:
+$$
+E \land V \rightarrow M
+$$
+Nếu validate thất bại:
+$$
+\neg V \rightarrow \neg M
+$$
+Do đó:
+$$
+\neg V \rightarrow \neg U
+$$
+và:
+
+$$
+\neg V \rightarrow \neg U
+$$
+
+### 6.11 DB Constraints / Index
+
+### 6.12 Query
+### 6.13 Error Handling
+
+| Case                                                             | message                  | HTTP Status | Exception                     |
+| ---------------------------------------------------------------- | ------------------------ | ----------: | ----------------------------- |
+| File bị rỗng                                                     | File empty               |         400 | EmptyFileException            |
+| Tên File Không hợp lệ                                            | File name not valid      |         400 | InvalidFilenameException      |
+| Đuôi file không hợp lệ                                           | File extension not valid |         400 | InvalidFileExtensionException |
+| Mime file không hợp lê                                           |                          |         400 | InvalidMimeTypeException      |
+| đọc stream thất bại                                              |                          |             | FileReadException             |
+| Khi tạo metadata nhưng MYSQL không khả dụng                      | Internal Error           |         500 | InternalServerException       |
+| Khi upload object thất bại do sự cố mạng                         | Internal Error           |         500 | InternalServerException       |
+| Khi upload object thành công nhưng cập nhật `COMPLETED` thất bại | Internal Error           |         500 | InternalServerException       |
+### 6.14 Test Cases
+
+#### 6.14.1 Test cases cho `File Upload Service`
+##### 6.14.1.1 Tạo metadata thất bại do MySQL không khả dụng
+**Given**
+- Client gửi request upload file hợp lệ.
+- MySQL bị mất kết nối, lag hoặc không thể ghi dữ liệu.
+
+**When**
+
+- Service thực hiện tạo metadata với trạng thái `UPLOADING`.
+
+**Then**
+- Việc tạo metadata thất bại.
+- Không thực hiện upload object lên S3/MinIO.
+- Không có object nào được tạo trong object storage.
+- API trả về HTTP `500 Internal Server Error`.
+
+---
+##### 6.14.1.2 Upload file và cập nhật trạng thái thành công
+**Given**
+- Client gửi request upload file hợp lệ.
+- Metadata được tạo thành công với trạng thái `UPLOADING`.
+- S3/MinIO hoạt động bình thường.
+- MySQL hoạt động bình thường.
+
+**When**
+- Service upload file lên S3/MinIO.
+- Service cập nhật metadata sau khi upload thành công.
+
+**Then**
+- Object được lưu thành công trên S3/MinIO.
+- Metadata được cập nhật từ `UPLOADING` sang `COMPLETED`.
+- `checksum` hoặc thông tin kết quả upload được lưu nếu có.
+- API trả về response thành công.
+
+---
+##### 6.14.1.3 Upload file thất bại và object chưa được tạo trên S3
+**Given**
+- Metadata được tạo thành công với trạng thái `UPLOADING`.
+- Quá trình upload gặp lỗi do timeout, mất kết nối hoặc lỗi object storage.
+- Object chưa được tạo thành công trên S3/MinIO.
+
+**When**
+
+- `objectStorageClient.upload()` ném exception.
+  **Then**
+- Service thực hiện xử lý lỗi upload.
+
+- Metadata được cập nhật từ `UPLOADING` sang `FAILED`.
+
+- Không tồn tại object trên S3/MinIO.
+
+- API trả về HTTP `500 Internal Server Error`.
+
+
+---
+
+##### 6.14.1.4 Upload thành công nhưng cập nhật trạng thái `COMPLETED` thất bại
+
+**Given**
+
+- Metadata được tạo thành công với trạng thái `UPLOADING`.
+
+- Object được upload thành công lên S3/MinIO.
+
+- MySQL bị lag, mất kết nối hoặc gặp lỗi khi cập nhật trạng thái `COMPLETED`.
+
+
+**When**
+
+- `stateManager.markCompleted()` ném exception.
+
+
+**Then**
+
+- Service thực hiện compensation bằng cách xóa object vừa upload khỏi S3/MinIO.
+
+- Service cố gắng cập nhật metadata từ `UPLOADING` sang `FAILED`.
+
+- Object không còn tồn tại trên S3/MinIO sau khi compensation hoàn thành.
+
+- API trả về HTTP `500 Internal Server Error`.
+
+
+---
+
+##### 6.14.1.5 Upload thành công nhưng cả cập nhật `COMPLETED` và cập nhật `FAILED` đều thất bại
+
+**Given**
+
+- Object được upload thành công lên S3/MinIO.
+
+- `stateManager.markCompleted()` thất bại do MySQL không khả dụng.
+
+- Việc cập nhật metadata sang `FAILED` cũng thất bại.
+
+
+**When**
+
+- Service thực hiện xử lý lỗi sau khi `markCompleted()` thất bại.
+
+
+**Then**
+
+- Service vẫn thực hiện xóa object khỏi S3/MinIO.
+
+- Service có gọi cập nhật trạng thái `FAILED`.
+
+- Exception ban đầu vẫn được giữ làm lỗi chính.
+
+- Exception phát sinh khi cập nhật `FAILED` được log hoặc thêm bằng `addSuppressed()`.
+
+- API trả về HTTP `500 Internal Server Error`.
+
+#### 6.14.2 `FileMetadataRepository`
+##### 6.14.2.1 Case nếu
 
 
 ## 7 Feature:
