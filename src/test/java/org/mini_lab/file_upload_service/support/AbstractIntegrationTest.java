@@ -7,10 +7,12 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.Network;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.containers.MinIOContainer;
+import org.testcontainers.lifecycle.Startables;
 import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.toxiproxy.ToxiproxyContainer;
 
 import java.io.IOException;
+import java.util.stream.Stream;
 
 @Testcontainers
 public abstract class AbstractIntegrationTest {
@@ -56,10 +58,13 @@ public abstract class AbstractIntegrationTest {
                 "ghcr.io/shopify/toxiproxy:2.5.0"
         ).withNetwork(NETWORK);
 
-        mysqlDb.start();
-        minioStorage.start();
-        toxiproxyContainer.start();
-
+        Startables.deepStart(
+                Stream.of(
+                        mysqlDb,
+                        minioStorage,
+                        toxiproxyContainer
+                )
+        ).join();
         createProxies();
     }
 
