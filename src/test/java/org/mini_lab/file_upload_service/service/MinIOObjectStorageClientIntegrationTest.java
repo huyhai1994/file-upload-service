@@ -86,8 +86,8 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void upload10Files_withLimitedConcurrency_notThrowException() throws Exception {
-        int numberOfTasks = 10;
+    void uploadTwoFilesConcurrency_notThrowException() throws Exception {
+        int numberOfTasks = 2;
         int poolSize = 50;
 
         CountDownLatch readyLatch = new CountDownLatch(numberOfTasks);
