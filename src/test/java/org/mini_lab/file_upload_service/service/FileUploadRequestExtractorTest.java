@@ -14,10 +14,11 @@ class FileUploadRequestExtractorTest {
     @Test
     void shouldBeExtractToFileUploadCommand() {
         MultipartFile file = MockObjectBuilder.getTextContentTypeMultipartFile();
-        UploadRequestObjectDTO uploadRequestObjectDTO = new UploadRequestObjectDTO(file);
+        String title = "test";
+        UploadRequestObjectDTO uploadRequestObjectDTO = new UploadRequestObjectDTO(file, title);
         FileUploadCommand uploadCommand = fileUploadRequestExtractor.extract(uploadRequestObjectDTO);
         assertEquals("test.txt", uploadCommand.originalFileName());
         assertEquals("text/plain", uploadCommand.contentType());
-        assertEquals(file.getSize(),uploadCommand.size());
+        assertEquals(file.getSize(), uploadCommand.size());
     }
 }

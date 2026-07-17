@@ -48,6 +48,8 @@ class FileUploadServiceIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     TransactionTemplate transactionTemplate;
 
+    final String title = "fake title";
+
     @MockitoSpyBean
     FileMetadataCreationService fileMetadataCreationService;
 
@@ -96,7 +98,7 @@ class FileUploadServiceIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void whenUploadSuccess_thenChangeStateToCompleted() {
-        FileMetadataResponseDTO fileMetadataResponseDTO = fileUploadService.processUploadFile(new UploadRequestObjectDTO(MockObjectBuilder.getTextContentTypeMultipartFile()));
+        FileMetadataResponseDTO fileMetadataResponseDTO = fileUploadService.processUploadFile(new UploadRequestObjectDTO(MockObjectBuilder.getTextContentTypeMultipartFile(), title));
         FileMetadata persistedFileMetadata = fileMetadataRepository.findById(fileMetadataResponseDTO.fileId()).orElseThrow();
         assertEquals(FileState.COMPLETED, persistedFileMetadata.getStatus());
         assertNotNull(persistedFileMetadata.getChecksum());
@@ -126,7 +128,7 @@ class FileUploadServiceIntegrationTest extends AbstractIntegrationTest {
                     InternalServerException.class,
                     () -> fileUploadService.processUploadFile(
                             new UploadRequestObjectDTO(
-                                    MockObjectBuilder.getTextContentTypeMultipartFile()
+                                    MockObjectBuilder.getTextContentTypeMultipartFile(), title
                             )
                     )
             );
@@ -163,7 +165,7 @@ class FileUploadServiceIntegrationTest extends AbstractIntegrationTest {
                 InternalServerException.class,
                 () -> fileUploadService.processUploadFile(
                         new UploadRequestObjectDTO(
-                                MockObjectBuilder.getTextContentTypeMultipartFile()
+                                MockObjectBuilder.getTextContentTypeMultipartFile(), title
                         )
                 )
         );

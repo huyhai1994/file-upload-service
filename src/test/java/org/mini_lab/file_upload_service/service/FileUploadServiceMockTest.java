@@ -52,7 +52,7 @@ class FileUploadServiceMockTest {
         command = getFileUploadCommand(file);
         fileMetadata = getValidUploadingFileMetadata();
         fileMetadata.setId(1L);
-        uploadRequestObjectDTO = new UploadRequestObjectDTO(file);
+        uploadRequestObjectDTO = new UploadRequestObjectDTO(file, "mock title");
     }
 
     @Test
@@ -73,7 +73,7 @@ class FileUploadServiceMockTest {
     @Test
     void whenFileIsEmpty_thenThrowExceptionAndShouldNotUpload() {
         UploadRequestObjectDTO request =
-                new UploadRequestObjectDTO(getTextContentTypeMultipartFile());
+                new UploadRequestObjectDTO(getTextContentTypeMultipartFile(), "mock title");
 
         when(fileUploadRequestExtractor.extract(any(UploadRequestObjectDTO.class)))
                 .thenReturn(command);
@@ -100,7 +100,7 @@ class FileUploadServiceMockTest {
     void whenFileExtensionInvalid_thenThrowInvalidFileExtensionExceptionAndShouldNotUpload() {
 
         UploadRequestObjectDTO request =
-                new UploadRequestObjectDTO(getTextContentTypeMultipartFile());
+                new UploadRequestObjectDTO(getTextContentTypeMultipartFile(), "title");
 
         when(fileUploadRequestExtractor.extract(any(UploadRequestObjectDTO.class)))
                 .thenReturn(command);
@@ -127,7 +127,7 @@ class FileUploadServiceMockTest {
     void whenMimeFileInvalid_thenThrowInvalidMimeTypeExceptionAndShouldNotUpload() {
 
         UploadRequestObjectDTO request =
-                new UploadRequestObjectDTO(getTextContentTypeMultipartFile());
+                new UploadRequestObjectDTO(getTextContentTypeMultipartFile(), "title");
 
         when(fileUploadRequestExtractor.extract(any(UploadRequestObjectDTO.class)))
                 .thenReturn(command);
@@ -154,7 +154,7 @@ class FileUploadServiceMockTest {
     void whenFileNameNotValid_thenThrowInvalidFilenameExceptionAndShouldNotUpload() {
 
         UploadRequestObjectDTO request =
-                new UploadRequestObjectDTO(getTextContentTypeMultipartFile());
+                new UploadRequestObjectDTO(getTextContentTypeMultipartFile(), "mock title");
 
         when(fileUploadRequestExtractor.extract(any(UploadRequestObjectDTO.class)))
                 .thenReturn(command);
@@ -180,7 +180,7 @@ class FileUploadServiceMockTest {
     @Test
     void whenUploadFails_thenShouldNotMarkCompletedAndShouldHandleFailure() {
         UploadRequestObjectDTO request =
-                new UploadRequestObjectDTO(getTextContentTypeMultipartFile());
+                new UploadRequestObjectDTO(getTextContentTypeMultipartFile(), "title");
 
         when(fileUploadRequestExtractor.extract(any(UploadRequestObjectDTO.class)))
                 .thenReturn(command);

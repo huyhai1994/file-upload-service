@@ -23,6 +23,7 @@ public class FileMetadataCreationService {
         String objectKey = objectKeyGenerator.generate();
         Long size = command.size();
         FileState fileState = FileState.UPLOADING;
+        String title = command.title();
 
         FileMetadata fileMetadata = new FileMetadata();
         fileMetadata.setFileName(fileName);
@@ -30,6 +31,7 @@ public class FileMetadataCreationService {
         fileMetadata.setObjectKey(objectKey);
         fileMetadata.setSize(size);
         fileMetadata.setStatus(fileState);
+        fileMetadata.setTitle(title);
 
         return fileMetadataRepository.save(fileMetadata);
     }

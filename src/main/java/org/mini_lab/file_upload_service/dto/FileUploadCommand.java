@@ -8,6 +8,7 @@ public record FileUploadCommand(
         MultipartFile file,
         String originalFileName,
         String contentType,
-        Long size
+        Long size,
+        String title
 ) {
 }
