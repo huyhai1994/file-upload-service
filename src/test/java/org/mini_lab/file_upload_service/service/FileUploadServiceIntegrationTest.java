@@ -100,10 +100,16 @@ class FileUploadServiceIntegrationTest extends AbstractIntegrationTest {
     void whenUploadSuccess_thenChangeStateToCompleted() {
         FileMetadataResponseDTO fileMetadataResponseDTO = fileUploadService.processUploadFile(new UploadRequestObjectDTO(MockObjectBuilder.getTextContentTypeMultipartFile(), title));
         FileMetadata persistedFileMetadata = fileMetadataRepository.findById(fileMetadataResponseDTO.fileId()).orElseThrow();
-        assertEquals(FileState.COMPLETED, persistedFileMetadata.getStatus());
-        assertNotNull(persistedFileMetadata.getChecksum());
         StatObjectResponse stat = getUploadedFile(persistedFileMetadata.getObjectKey());
+
+        assertNotNull(persistedFileMetadata.getId());
+        assertNotNull(fileMetadataResponseDTO.fileName());
         assertEquals(stat.size(), persistedFileMetadata.getSize());
+        assertNotNull(fileMetadataResponseDTO.size());
+        assertNotNull(fileMetadataResponseDTO.contentType());
+        assertNotNull(persistedFileMetadata.getChecksum());
+        assertEquals(FileState.COMPLETED, persistedFileMetadata.getStatus());
+
     }
 
     @Test
