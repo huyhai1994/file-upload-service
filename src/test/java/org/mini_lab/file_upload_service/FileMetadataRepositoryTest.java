@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mini_lab.file_upload_service.support.MockObjectBuilder.*;
 
@@ -88,6 +89,23 @@ class FileMetadataRepositoryTest extends AbstractIntegrationTest {
     @Test
     void save_whenMissingNonNullField_thenThrowException() {
         assertThrows(DataIntegrityViolationException.class, () -> fileMetadataRepository.saveAndFlush(getNonValidUploadingFileMetadata()));
+    }
+
+    @Test
+    void getFileMetadataById_whenFileMetadataExists_thenOptionalNotEmpty() {
+        FileMetadata fileMetadata = getValidUploadingFileMetadata();
+
+        FileMetadata persistedFileMetadata = fileMetadataRepository.saveAndFlush(fileMetadata);
+        entityManager.flush();
+        entityManager.clear();
+
+       assertThat(fileMetadataRepository.getFileMetadataById(persistedFileMetadata.getId())).isNotEmpty();
+
+    }
+
+    @Test
+    void getFileMetadataById_whenFileMetadataNotExits_thenOptionalIsEmpty(){
+        assertThat(fileMetadataRepository.getFileMetadataById(1L)).isEmpty();
     }
 
 
