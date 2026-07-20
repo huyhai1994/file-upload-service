@@ -65,4 +65,18 @@ public class MinIOObjectStorageClient implements ObjectStorageClient {
             throw new ObjectStorageException("Delete object failed, bucket=%s, object key=%s".formatted(bucket, objectKey), e);
         }
     }
+
+    @Override
+    public InputStream getObject(String objectKey) {
+        try {
+            return minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(minioConfigProperties.bucketName())
+                            .object(objectKey)
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new ObjectStorageException(String.format("Can't get Object with %s", objectKey), e);
+        }
+    }
 }
