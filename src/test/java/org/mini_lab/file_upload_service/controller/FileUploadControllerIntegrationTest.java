@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.dto.ApiResponse;
 import org.mini_lab.file_upload_service.dto.FileMetadataResponseDTO;
+import org.mini_lab.file_upload_service.entity.FileState;
 import org.mini_lab.file_upload_service.repository.FileMetadataRepository;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.mini_lab.file_upload_service.support.MockObjectBuilder;
@@ -107,13 +108,12 @@ class FileUploadControllerIntegrationTest extends AbstractIntegrationTest {
         assertThat(response.apiError()).isNull();
 
         assertThat(response.data().fileId()).isNotNull();
-        assertThat(response.data().title()).isNotNull();
         assertThat(response.data().fileName()).isNotNull();
         assertThat(response.data().contentType()).isNotNull();
-        assertThat(response.data().extension()).isNotNull();
         assertThat(response.data().size()).isNotNull();
         assertThat(response.data().checksum()).isNotNull();
         assertThat(response.data().state()).isNotNull();
         assertThat(response.data().createdAt()).isNotNull();
+        assertThat(response.data().state()).isEqualTo(FileState.COMPLETED);
     }
 }

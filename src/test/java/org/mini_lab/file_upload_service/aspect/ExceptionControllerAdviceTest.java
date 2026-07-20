@@ -2,6 +2,7 @@ package org.mini_lab.file_upload_service.aspect;
 
 import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.dto.ErrorDetail;
+import org.mini_lab.file_upload_service.entity.FileState;
 import org.mini_lab.file_upload_service.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -46,6 +47,23 @@ class ExceptionControllerAdviceTest {
 
 
     }
+
+    @Test
+    void handleFileNotAvailable_shouldReturn409StatusCode() {
+        Long fileId = 1L;
+        FileState state = FileState.UPLOADING;
+        ResponseEntity<ErrorDetail> response = handler.handleFileNotAvailable(new FileNotAvailableException(fileId, state));
+        assertEquals(HttpStatus.valueOf(409), response.getStatusCode());
+        assertEquals(String.format("File with %d id and state %s not available", fileId, state), Objects.requireNonNull(response.getBody()).getMessage());
+    }
+
+    @Test
+    void handleFileNotFound_shouldReturn404StatusCode() {
+        ResponseEntity<ErrorDetail> response = handler.handleFileNotFound(new FileNotFoundException());
+        assertEquals(HttpStatus.valueOf(404), response.getStatusCode());
+        assertEquals("File not found!", Objects.requireNonNull(response.getBody()).getMessage());
+    }
+
 
     private void assertBadRequest(
             ResponseEntity<ErrorDetail> response,

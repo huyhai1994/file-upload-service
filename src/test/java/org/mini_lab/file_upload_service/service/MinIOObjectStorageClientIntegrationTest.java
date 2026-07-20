@@ -1,6 +1,7 @@
 package org.mini_lab.file_upload_service.service;
 
 import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
 import io.minio.StatObjectArgs;
 import io.minio.StatObjectResponse;
 import io.minio.errors.*;
@@ -15,7 +16,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -145,6 +149,37 @@ class MinIOObjectStorageClientIntegrationTest extends AbstractIntegrationTest {
                     )
             );
         }
+    }
+
+    @Test
+    void whenGetObject_thenDownloadBytesAndUploadBytesShouldBeSame() throws IOException {
+        String objectKey = "test-objectKey";
+        byte[] uploadBytes = "this is the complete file content".getBytes(StandardCharsets.UTF_8);
+        try {
+            minioClient.putObject(PutObjectArgs.builder()
+
+                    .bucket(minioConfigProperties.bucketName())
+                    .object(objectKey)
+                    .stream(
+                            new ByteArrayInputStream(uploadBytes)
+                            , uploadBytes.length, -1)
+                    .contentType("text/plain")
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        byte[] downloadBytes;
+        try (InputStream inputStream = minIOObjectStorageClient.getObject(objectKey)) {
+            downloadBytes = inputStream.readAllBytes();
+        }
+        assertArrayEquals(uploadBytes, downloadBytes);
+    }
+
+    @Test
+    void whenGetObject_ifObjectNotExistThrowObjectStorageException() {
+        String objectKey = "test-objectKey";
+        assertThrows(ObjectStorageException.class, () -> minIOObjectStorageClient.getObject(objectKey));
     }
 }
 

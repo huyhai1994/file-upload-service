@@ -97,7 +97,7 @@ public class FileUploadService {
                 .extension(metadata.getExtension())
                 .size(metadata.getSize())
                 .checksum(checksum)
-                .state(metadata.getStatus())
+                .state(FileState.COMPLETED)
                 .createdAt(metadata.getCreatedAt())
                 .build();
     }

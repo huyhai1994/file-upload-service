@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface FileMetadataRepository extends JpaRepository<FileMetadata, Long> {
 
     @Modifying
@@ -27,4 +29,6 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, Long
                     and fm.status = org.mini_lab.file_upload_service.entity.FileState.UPLOADING
             """)
     int markFailedIfUploading(@Param("fileId") Long fileId);
+
+    Optional<FileMetadata> getFileMetadataById(Long id);
 }
