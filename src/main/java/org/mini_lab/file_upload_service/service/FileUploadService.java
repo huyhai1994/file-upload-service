@@ -93,10 +93,12 @@ public class FileUploadService {
         return FileMetadataResponseDTO.builder()
                 .fileId(metadata.getId())
                 .fileName(metadata.getFileName())
-                .size(metadata.getSize())
                 .contentType(metadata.getContentType())
+                .extension(metadata.getExtension())
+                .size(metadata.getSize())
                 .checksum(checksum)
-                .state(FileState.COMPLETED)
+                .state(metadata.getStatus())
+                .createdAt(metadata.getCreatedAt())
                 .build();
     }
 }

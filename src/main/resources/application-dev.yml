@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: file_upload_service_dev
+  datasource:
+    url: jdbc:mysql://mysql:3306/file_service
+    username: root
+    password: root
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      idle-timeout: 300000
+      connection-timeout: 5000
+      max-lifetime: 5000
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+minio:
+  endpoint: http://minio:9000
+  access-key: minio
+  secret-key: minio123
+  bucket-name: dev-bucket
+  connect-timeout: 10
+  read-timeout: 10
+  write-timeout: 10
+file:
+  extension:
+    allowed-list:
+      - jpg
+      - jpeg
+      - png
+      - pdf
+      - txt
+  mime-type:
+    allowed-list:
+      - image/jpeg
+      - image/png
+      - application/pdf
+      - text/plain

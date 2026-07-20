@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: file_upload_service
+
+server:
+  port: 20001

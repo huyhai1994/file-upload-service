@@ -1,7 +1,11 @@
 package org.mini_lab.file_upload_service.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mini_lab.file_upload_service.dto.ApiResponse;
+import org.mini_lab.file_upload_service.dto.FileMetadataResponseDTO;
 import org.mini_lab.file_upload_service.repository.FileMetadataRepository;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.mini_lab.file_upload_service.support.MockObjectBuilder;
@@ -11,7 +15,9 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -27,6 +33,9 @@ class FileUploadControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private FileMetadataRepository fileMetadataRepository;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     void cleanUp() {
@@ -86,8 +95,25 @@ class FileUploadControllerIntegrationTest extends AbstractIntegrationTest {
         MockMultipartFile mockMultipartFile =
                 MockObjectBuilder.getTextContentTypeMultipartFile();
 
-        mockMvc.perform(multipart("/api/v1/files")
+        MvcResult result = mockMvc.perform(multipart("/api/v1/files")
                         .file(mockMultipartFile))
-                .andExpect(status().is2xxSuccessful());
+                .andExpect(status().is2xxSuccessful()).andReturn();
+        String responseBody = result.getResponse().getContentAsString();
+
+        ApiResponse<FileMetadataResponseDTO> response = objectMapper.readValue(responseBody, new TypeReference<>() {
+        });
+        assertThat(response.success()).isTrue();
+        assertThat(response.data()).isNotNull();
+        assertThat(response.apiError()).isNull();
+
+        assertThat(response.data().fileId()).isNotNull();
+        assertThat(response.data().title()).isNotNull();
+        assertThat(response.data().fileName()).isNotNull();
+        assertThat(response.data().contentType()).isNotNull();
+        assertThat(response.data().extension()).isNotNull();
+        assertThat(response.data().size()).isNotNull();
+        assertThat(response.data().checksum()).isNotNull();
+        assertThat(response.data().state()).isNotNull();
+        assertThat(response.data().createdAt()).isNotNull();
     }
 }
