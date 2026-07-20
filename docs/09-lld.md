@@ -587,10 +587,10 @@ $$
 
 | Case                                                             | message                  | HTTP Status | Exception                     |
 | ---------------------------------------------------------------- | ------------------------ | ----------: | ----------------------------- |
-| File bị rỗng                                                     | File empty               |         400 | EmptyFileException            |
+| File bị rỗng                                                     | File Empty               |         400 | EmptyFileException            |
 | Tên File Không hợp lệ                                            | File name not valid      |         400 | InvalidFilenameException      |
 | Đuôi file không hợp lệ                                           | File extension not valid |         400 | InvalidFileExtensionException |
-| Mime file không hợp lê                                           |                          |         400 | InvalidMimeTypeException      |
+| Mime file không hợp lê                                           | Mime type  not valid     |         400 | InvalidMimeTypeException      |
 | đọc stream thất bại                                              |                          |             | FileReadException             |
 | Khi tạo metadata nhưng MYSQL không khả dụng                      | Internal Error           |         500 | InternalServerException       |
 | Khi upload object thất bại do sự cố mạng                         | Internal Error           |         500 | InternalServerException       |
@@ -714,8 +714,202 @@ $$
 ##### 6.14.2.1 Case nếu
 
 
-## 7 Feature:
+## 7 Feature: Download file
+### 7.1 Responsibility
+- Tính năng này cho phép người dùng tải file đã upload về máy
+- Phía client gửi fileid để hệ thống có thể truy vấn meta data rồi từ đó lấy object key để lấy file từ S3 về
+- Không được đọc toàn bộ object bằng byte[], vì file lớn sẽ chiếm heap
+- Nên stream trực tiếp từ S3 xuống http response
+### 7.2 API / Entry Point
+#### 7.2.1 Endpoint
 
+```http
+GET /api/v1/files/{fileId}/download
+```
+
+#### 7.2.2 Content Type
+
+```text
+binary stream
+```
+#### 7.2.3 Request Parts
+
+| Name   | Type | Required | Description |
+| ------ | ---- | -------- | ----------- |
+| fileId | Long | Yes      | Id của file |
+
+#### 7.2.4 Response
+
+
+```text
+binary stream
+```
+#### 7.2.5 Status Codes
+
+| Status | Meaning                          | Exception |
+| ------ | -------------------------------- | --------- |
+| 200    | Download thành công              |           |
+| 404    | Không tìm thấy file              |           |
+| 500    | Lỗi hệ thống                     |           |
+| 409    | File chưa ở trạng thái COMPLETED |           |
+
+
+
+
+### 7.3 Sequence Flow
+Phase 1 :
+
+```
+Client -> Spring Boot -> MinIO -> Spring Boot -> Client
+```
+
+Kèm theo:
+
+- `StreamingResponseBody`
+- `Content-Length`
+- `Content-Disposition`
+- timeout hợp lý
+- xử lý client disconnect
+- không update trạng thái file khi download gián đoạn
+
+```plantuml
+@startuml  
+  
+title Download File Flow  
+  
+autonumber  
+  
+actor User  
+participant "File Upload Service" as FUS  
+database "MySQL" as MySQL  
+database "MinIO" as MinIO  
+  
+User -> FUS: GET /api/v1/files/{fileId}/download  
+  
+FUS -> MySQL: Find metadata by fileId  
+  
+alt Metadata not found  
+    FUS --> User: 404 File Not Found  
+  
+else File status != COMPLETED  
+    FUS --> User: 409 File Not Available  
+  
+else File is available  
+    FUS -> MinIO: Get object by objectKey  
+  
+    alt Object not found in MinIO  
+        MinIO --> FUS: ObjectNotFound  
+        FUS --> User: 500 Internal Server Error  
+    else Object exists  
+        MinIO --> FUS: Object stream  
+        FUS --> User: 200 OK\nContent-Type\nContent-Length\nContent-Disposition\nStream file  
+    end  
+end  
+  
+@enduml
+```
+
+### 7.4 Class Diagram
+
+Phase 1 sẽ triển khai theo hướng sau:
+
+```
+Controller
+   → DownloadService: kiểm tra metadata
+   → ObjectStorageClient: mở InputStream từ MinIO
+   → StreamingResponseBody: copy InputStream sang HTTP OutputStream
+
+```
+
+```plantuml
+@startuml  
+  
+class FileDownloadController {  
+    +downloadFile(fileId: Long): ResponseEntity<StreamingResponseBody>  
+}  
+  
+class FileDownloadService {  
+    +prepareDownload(fileId: Long): FileDownloadResource  
+    -verifyFileDownloadable(fileMetadata: FileMetadata): void  
+}  
+  
+class FileDownloadResource <<record>> {  
+    +fileName: String  
+    +contentType: String  
+    +size: long  
+    +inputStreamSupplier: InputStreamSupplier  
+}  
+  
+class FileNotAvailableException  
+class FileNotFoundException  
+  
+interface InputStreamSupplier <<functional interface>> {  
+    +open(): InputStream throws IOException  
+}  
+  
+interface ObjectStorageClient {  
+    +getObject(objectKey: String): InputStream  
+}  
+  
+class MinIOObjectStorageClient  
+  
+interface FileMetadataRepository {  
+    +findById(id: Long): Optional<FileMetadata>  
+}  
+  
+class FileMetadata {  
+    -id: Long  
+    -fileName: String  
+    -contentType: String  
+    -size: long  
+    -objectKey: String  
+    -state: FileState  
+}  
+  
+enum FileState {  
+    UPLOADING  
+    COMPLETED  
+    FAILED  
+}  
+  
+FileDownloadController --> FileDownloadService: invokes  
+FileDownloadController --> FileDownloadResource: builds response from  
+  
+FileDownloadService --> FileMetadataRepository: loads metadata  
+FileDownloadService --> ObjectStorageClient: creates lazy supplier for  
+FileDownloadService --> FileDownloadResource: returns  
+FileDownloadService --> FileNotAvailableException: throws  
+FileDownloadService --> FileNotFoundException: throws  
+  
+FileMetadataRepository --> FileMetadata: returns  
+FileMetadata --> FileState  
+  
+FileDownloadResource --> InputStreamSupplier: contains  
+  
+MinIOObjectStorageClient ..|> ObjectStorageClient  
+  
+@enduml
+```
+### 7.5 Validation Rules
+### 7.6 Transaction Boundary
+### 7.7 Concurrency Control / Locking
+### 7.8 DB Constraints / Index
+### 7.9 Query
+### 7.10 Error Handling
+### 7.11 Test Cases
+- Client ngắt download
+- App đang shutdown
+- Mạng tới MinIO lỗi
+- HTTP connection bị reset
+### 7.12 Trade Off
+#### 7.12.1 Streaming file to client
+- ở phase 1 sẽ sử dụng `StreamingResponseBody` thường chạy trên **một thread khác do async executor quản lý**, không tiếp tục chiếm servlet request thread ban đầu trong toàn bộ thời gian stream.
+- Nhưng backend vẫn chịu
+  - một async thread
+  - một connection tới mysql
+  - một connection tới minio
+  - trong suốt lúc file đang được tải, đường truyền mạng của server vẫn bị sử dụng liên tục.
+- Phase 2 sẽ sử dụng Presigned url do S3 cung cấp để người dùng có thể tải trực tiếp từ S3 mà không làm backend chịu tải.
 ## 8 Observability
 ### 8.1 Logging
 ### 8.2 Metrics

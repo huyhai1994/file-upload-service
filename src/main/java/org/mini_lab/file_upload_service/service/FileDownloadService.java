@@ -8,6 +8,7 @@ import org.mini_lab.file_upload_service.exception.FileNotAvailableException;
 import org.mini_lab.file_upload_service.exception.FileNotFoundException;
 import org.mini_lab.file_upload_service.repository.FileMetadataRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 
@@ -20,6 +21,7 @@ public class FileDownloadService {
 
     private final ObjectStorageClient objectStorageClient;
 
+    @Transactional(readOnly = true)
     public FileDownloadResource prepareDownload(Long fileId) {
         FileMetadata metadata = fileMetadataRepository.getFileMetadataById(fileId).orElseThrow(FileNotFoundException::new);
 
