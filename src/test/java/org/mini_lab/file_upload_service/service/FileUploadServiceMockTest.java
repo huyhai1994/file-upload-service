@@ -35,7 +35,7 @@ class FileUploadServiceMockTest {
     FileMetadataCreationService fileMetadataCreationService;
 
     @Mock
-    FileUploadStateManager fileUploadStateManager;
+    FileMetadataStateManager fileMetadataStateManager;
 
     @Mock
     ObjectStorageClient objectStorageClient;
@@ -66,7 +66,7 @@ class FileUploadServiceMockTest {
 
         fileUploadService.processUploadFile(uploadRequestObjectDTO);
 
-        verify(fileUploadStateManager).markCompleted(eq(1L), any(String.class));
+        verify(fileMetadataStateManager).markCompleted(eq(1L), any(String.class));
 
     }
 
@@ -92,7 +92,7 @@ class FileUploadServiceMockTest {
         verifyNoInteractions(
                 fileMetadataCreationService,
                 objectStorageClient,
-                fileUploadStateManager
+                fileMetadataStateManager
         );
     }
 
@@ -119,7 +119,7 @@ class FileUploadServiceMockTest {
         verifyNoInteractions(
                 fileMetadataCreationService,
                 objectStorageClient,
-                fileUploadStateManager
+                fileMetadataStateManager
         );
     }
 
@@ -146,7 +146,7 @@ class FileUploadServiceMockTest {
         verifyNoInteractions(
                 fileMetadataCreationService,
                 objectStorageClient,
-                fileUploadStateManager
+                fileMetadataStateManager
         );
     }
 
@@ -173,7 +173,7 @@ class FileUploadServiceMockTest {
         verifyNoInteractions(
                 fileMetadataCreationService,
                 objectStorageClient,
-                fileUploadStateManager
+                fileMetadataStateManager
         );
     }
 
@@ -210,10 +210,10 @@ class FileUploadServiceMockTest {
         verify(objectStorageClient)
                 .delete(fileMetadata.getObjectKey());
 
-        verify(fileUploadStateManager)
+        verify(fileMetadataStateManager)
                 .markFailed(fileMetadata.getId());
 
-        verify(fileUploadStateManager, never())
+        verify(fileMetadataStateManager, never())
                 .markCompleted(anyLong(), anyString());
     }
 

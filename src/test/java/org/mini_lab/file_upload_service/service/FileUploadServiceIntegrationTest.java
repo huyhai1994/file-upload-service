@@ -54,7 +54,7 @@ class FileUploadServiceIntegrationTest extends AbstractIntegrationTest {
     FileMetadataCreationService fileMetadataCreationService;
 
     @MockitoSpyBean
-    FileUploadStateManager fileUploadStateManager;
+    FileMetadataStateManager fileMetadataStateManager;
 
     @Autowired
     MinioClient minioClient;
@@ -164,7 +164,7 @@ class FileUploadServiceIntegrationTest extends AbstractIntegrationTest {
         doThrow(new CannotCreateTransactionException(
                 "Simulated transient database failure"
         ))
-                .when(fileUploadStateManager)
+                .when(fileMetadataStateManager)
                 .markCompleted(anyLong(), anyString());
 
         assertThrows(

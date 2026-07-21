@@ -1,6 +1,5 @@
 package org.mini_lab.file_upload_service.service;
 
-import org.apache.catalina.Executor;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,10 +25,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class FileUploadStateManagerIntegrationTest extends AbstractIntegrationTest {
+class FileMetadataStateManagerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
-    FileUploadStateManager fileUploadStateManager;
+    FileMetadataStateManager fileMetadataStateManager;
 
     @Autowired
     FileMetadataRepository fileMetadataRepository;
@@ -75,7 +74,7 @@ class FileUploadStateManagerIntegrationTest extends AbstractIntegrationTest {
                                     status -> {
 
                                         try {
-                                            fileUploadStateManager.markFailed(fileId);
+                                            fileMetadataStateManager.markFailed(fileId);
                                             successCount.incrementAndGet();
                                         } catch (InvalidStateTransitionException e) {
                                             failureCount.incrementAndGet();
@@ -131,7 +130,7 @@ class FileUploadStateManagerIntegrationTest extends AbstractIntegrationTest {
                         startLatch.await();
 
                         transactionTemplate.executeWithoutResult(status ->
-                                fileUploadStateManager.markCompleted(
+                                fileMetadataStateManager.markCompleted(
                                         fileId,
                                         UUID.randomUUID().toString()
                                 )

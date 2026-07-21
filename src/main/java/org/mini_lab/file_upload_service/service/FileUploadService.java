@@ -21,7 +21,7 @@ public class FileUploadService {
     private final FileUploadRequestExtractor fileUploadRequestExtractor;
     private final FileRequestVerifyService fileRequestVerifyService;
     private final FileMetadataCreationService fileMetadataCreationService;
-    private final FileUploadStateManager fileUploadStateManager;
+    private final FileMetadataStateManager fileMetadataStateManager;
     private final ObjectStorageClient objectStorageClient;
 
     public FileMetadataResponseDTO processUploadFile(
@@ -54,7 +54,7 @@ public class FileUploadService {
         }
 
         try {
-            fileUploadStateManager.markCompleted(
+            fileMetadataStateManager.markCompleted(
                     metadata.getId(),
                     uploadResult.checksum()
             );
@@ -80,7 +80,7 @@ public class FileUploadService {
         }
 
         try {
-            fileUploadStateManager.markFailed(metadata.getId());
+            fileMetadataStateManager.markFailed(metadata.getId());
         } catch (Exception stateUpdateException) {
             originalException.addSuppressed(stateUpdateException);
         }
