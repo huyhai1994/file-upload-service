@@ -104,7 +104,7 @@ class FileMetadataRepositoryTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void getFileMetadataById_whenFileMetadataNotExits_thenOptionalIsEmpty(){
+    void getFileMetadataById_whenFileMetadataNotExits_thenOptionalIsEmpty() {
         assertThat(fileMetadataRepository.getFileMetadataById(1L)).isEmpty();
     }
 

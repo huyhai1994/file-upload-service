@@ -18,7 +18,8 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, Long
             where fm.id = :fileId
               and fm.status = org.mini_lab.file_upload_service.entity.FileState.UPLOADING
             """)
-    int markCompletedIfUploading(@Param("fileId") Long fileId, String checksum);
+    int markCompletedIfUploading(@Param("fileId") Long fileId,
+                                 @Param("checksum") String checksum);
 
 
     @Modifying

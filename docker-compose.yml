@@ -10,6 +10,7 @@ services:
         condition: service_healthy
       minio:
         condition: service_started
+    restart: unless-stopped
     networks:
       - backend-network
 
@@ -18,6 +19,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: file_service
+    restart: unless-stopped
     ports:
       - "3308:3306"
     healthcheck:
@@ -36,6 +38,7 @@ services:
     environment:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio123
+    restart: unless-stopped
     ports:
       - "9000:9000"
       - "9001:9001"
