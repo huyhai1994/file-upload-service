@@ -1,76 +1,157 @@
 package org.mini_lab.file_upload_service.aspect;
 
 import org.junit.jupiter.api.Test;
-import org.mini_lab.file_upload_service.dto.ErrorDetail;
+import org.mini_lab.file_upload_service.dto.ApiError;
+import org.mini_lab.file_upload_service.dto.ApiResponse;
 import org.mini_lab.file_upload_service.entity.FileState;
+import org.mini_lab.file_upload_service.enums.ErrorCode;
 import org.mini_lab.file_upload_service.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.util.Objects;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class ExceptionControllerAdviceTest {
-    private final ExceptionControllerAdvice handler = new ExceptionControllerAdvice();
+
+    private final ExceptionControllerAdvice advice =
+            new ExceptionControllerAdvice();
 
     @Test
-    void handleEmptyFileException_shouldReturn400StatusCode() {
-        ResponseEntity<ErrorDetail> response = handler.handleBadRequest(new EmptyFileException());
-        assertBadRequest(response, "File Empty");
+    void handleEmptyFile_shouldReturnBadRequest() {
+        ResponseEntity<ApiResponse<Void>> response =
+                advice.handleEmptyFile(
+                        new EmptyFileException()
+                );
+
+        assertErrorResponse(
+                response,
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.EMPTY_FILE
+        );
     }
 
     @Test
-    void handleInvalidFileNameException_shouldReturn400StatusCode() {
-        ResponseEntity<ErrorDetail> response = handler.handleBadRequest(new InvalidFilenameException());
-        assertBadRequest(response, "File name not valid");
+    void handleInvalidFilename_shouldReturnBadRequest() {
+        ResponseEntity<ApiResponse<Void>> response =
+                advice.handleInvalidFilename(
+                        new InvalidFilenameException()
+                );
+
+        assertErrorResponse(
+                response,
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_FILE_NAME
+        );
     }
 
     @Test
-    void handleInvalidFileExtensionException_shouldReturn400StatusCode() {
-        ResponseEntity<ErrorDetail> response = handler.handleBadRequest(new InvalidFileExtensionException());
-        assertBadRequest(response, "File extension not valid");
+    void handleInvalidFileExtension_shouldReturnBadRequest() {
+        ResponseEntity<ApiResponse<Void>> response =
+                advice.handleInvalidFileExtension(
+                        new InvalidFileExtensionException()
+                );
+
+        assertErrorResponse(
+                response,
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_FILE_EXTENSION
+        );
     }
 
     @Test
-    void handleInvalidMimeTypeException_shouldReturn400StatusCode() {
-        ResponseEntity<ErrorDetail> response = handler.handleBadRequest(new InvalidMimeTypeException());
-        assertBadRequest(response, "Mime type  not valid");
-    }
+    void handleInvalidMimeType_shouldReturnBadRequest() {
+        ResponseEntity<ApiResponse<Void>> response =
+                advice.handleInvalidMimeType(
+                        new InvalidMimeTypeException()
+                );
 
-
-    @Test
-    void handleInternalServerException_shouldReturn500StatusCode() {
-        ResponseEntity<ErrorDetail> response = handler.handleInternalServerError(new InternalServerException());
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("Internal Error", Objects.requireNonNull(response.getBody()).getMessage());
-
-
-    }
-
-    @Test
-    void handleFileNotAvailable_shouldReturn409StatusCode() {
-        Long fileId = 1L;
-        FileState state = FileState.UPLOADING;
-        ResponseEntity<ErrorDetail> response = handler.handleFileNotAvailable(new FileNotAvailableException(fileId, state));
-        assertEquals(HttpStatus.valueOf(409), response.getStatusCode());
-        assertEquals(String.format("File with %d id and state %s not available", fileId, state), Objects.requireNonNull(response.getBody()).getMessage());
+        assertErrorResponse(
+                response,
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_MIME_TYPE
+        );
     }
 
     @Test
-    void handleFileNotFound_shouldReturn404StatusCode() {
-        ResponseEntity<ErrorDetail> response = handler.handleFileNotFound(new FileNotFoundException());
-        assertEquals(HttpStatus.valueOf(404), response.getStatusCode());
-        assertEquals("File not found!", Objects.requireNonNull(response.getBody()).getMessage());
+    void handleFileNotFound_shouldReturnNotFound() {
+        ResponseEntity<ApiResponse<Void>> response =
+                advice.handleFileNotFound(
+                        new FileNotFoundException()
+                );
+
+        assertErrorResponse(
+                response,
+                HttpStatus.NOT_FOUND,
+                ErrorCode.FILE_NOT_FOUND
+        );
     }
 
+    @Test
+    void handleFileNotAvailable_shouldReturnConflict() {
+        Long id = 1L;
+        ResponseEntity<ApiResponse<Void>> response =
+                advice.handleFileNotAvailable(
+                        new FileNotAvailableException(id, FileState.COMPLETED)
+                );
 
-    private void assertBadRequest(
-            ResponseEntity<ErrorDetail> response,
-            String expectedMessage
+        assertErrorResponse(
+                response,
+                HttpStatus.CONFLICT,
+                ErrorCode.FILE_NOT_AVAILABLE
+        );
+    }
+
+    @Test
+    void handleInternalServerException_shouldReturnInternalServerError() {
+        ResponseEntity<ApiResponse<Void>> response =
+                advice.handleInternalServerError(
+                        new InternalServerException()
+                );
+
+        assertErrorResponse(
+                response,
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                ErrorCode.INTERNAL_SERVER_ERROR
+        );
+    }
+
+    @Test
+    void handleFileReadException_shouldReturnInternalServerError() {
+        ResponseEntity<ApiResponse<Void>> response =
+                advice.handleInternalServerError(
+                        new FileReadException(new Exception())
+                );
+
+        assertErrorResponse(
+                response,
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                ErrorCode.INTERNAL_SERVER_ERROR
+        );
+    }
+
+    private void assertErrorResponse(
+            ResponseEntity<ApiResponse<Void>> response,
+            HttpStatus expectedStatus,
+            ErrorCode expectedErrorCode
     ) {
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(expectedMessage, response.getBody().getMessage());
+        assertThat(response.getStatusCode())
+                .isEqualTo(expectedStatus);
+
+        assertThat(response.getBody())
+                .isNotNull();
+
+        ApiResponse<Void> body = response.getBody();
+
+        assertThat(body.success()).isFalse();
+        assertThat(body.data()).isNull();
+        assertThat(body.error()).isNotNull();
+
+        ApiError error = body.error();
+
+        assertThat(error.code())
+                .isEqualTo(expectedErrorCode.name());
+
+        assertThat(error.message())
+                .isEqualTo(expectedErrorCode.getDefaultMessage());
     }
 }

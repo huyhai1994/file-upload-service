@@ -1,15 +1,17 @@
 package org.mini_lab.file_upload_service.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mini_lab.file_upload_service.dto.ApiError;
 import org.mini_lab.file_upload_service.dto.ApiResponse;
 import org.mini_lab.file_upload_service.dto.FileMetadataResponseDTO;
 import org.mini_lab.file_upload_service.entity.FileState;
+import org.mini_lab.file_upload_service.enums.ErrorCode;
 import org.mini_lab.file_upload_service.repository.FileMetadataRepository;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.mini_lab.file_upload_service.support.MockObjectBuilder;
+import org.mini_lab.file_upload_service.utils.JacksonUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -20,14 +22,14 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class FileUploadControllerIntegrationTest extends AbstractIntegrationTest {
+
+    private static final String UPLOAD_URL = "/api/v1/files";
 
     @Autowired
     private MockMvc mockMvc;
@@ -36,7 +38,7 @@ class FileUploadControllerIntegrationTest extends AbstractIntegrationTest {
     private FileMetadataRepository fileMetadataRepository;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private JacksonUtils jacksonUtils;
 
     @BeforeEach
     void cleanUp() {
@@ -45,75 +47,117 @@ class FileUploadControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void uploadFile_whenFileIsEmpty_thenReturnBadRequest() throws Exception {
-        MockMultipartFile mockMultipartFile =
+        MockMultipartFile file =
                 MockObjectBuilder.getEmptyMultipartFile();
 
-        mockMvc.perform(multipart("/api/v1/files")
-                        .file(mockMultipartFile))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message")
-                        .value("File Empty"));
+        ApiError error = performBadRequest(file);
+
+        assertApiError(error, ErrorCode.EMPTY_FILE);
     }
 
     @Test
-    void uploadFile_whenFileNameInvalid_thenReturnBadRequest() throws Exception {
-        MockMultipartFile mockMultipartFile =
+    void uploadFile_whenFileNameInvalid_thenReturnBadRequest()
+            throws Exception {
+
+        MockMultipartFile file =
                 MockObjectBuilder.getEmptyFilenameMultipartFile();
 
-        mockMvc.perform(multipart("/api/v1/files")
-                        .file(mockMultipartFile))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message")
-                        .value("File name not valid"));
+        ApiError error = performBadRequest(file);
+
+        assertApiError(error, ErrorCode.INVALID_FILE_NAME);
     }
 
     @Test
-    void uploadFile_whenFileContentAndExtensionMismatch_thenReturnBadRequest() throws Exception {
-        MockMultipartFile mockMultipartFile =
+    void uploadFile_whenFileContentAndExtensionMismatch_thenReturnBadRequest()
+            throws Exception {
+
+        MockMultipartFile file =
                 MockObjectBuilder.getMismatchMimeMultipartFile();
 
-        mockMvc.perform(multipart("/api/v1/files")
-                        .file(mockMultipartFile))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message")
-                        .value("Mime type  not valid"));
+        ApiError error = performBadRequest(file);
+
+        assertApiError(error, ErrorCode.INVALID_MIME_TYPE);
     }
 
     @Test
-    void uploadFile_whenFileExtensionInvalid_ThenReturnBadRequest() throws Exception {
-        MockMultipartFile mockMultipartFile =
+    void uploadFile_whenFileExtensionInvalid_thenReturnBadRequest()
+            throws Exception {
+
+        MockMultipartFile file =
                 MockObjectBuilder.getNonValidExtensionMultipartFile();
 
-        mockMvc.perform(multipart("/api/v1/files")
-                        .file(mockMultipartFile))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message")
-                        .value("File extension not valid"));
+        ApiError error = performBadRequest(file);
+
+        assertApiError(error, ErrorCode.INVALID_FILE_EXTENSION);
     }
 
     @Test
     void uploadFile_whenFileIsValid_thenReturnOk() throws Exception {
-        MockMultipartFile mockMultipartFile =
+        MockMultipartFile file =
                 MockObjectBuilder.getTextContentTypeMultipartFile();
 
-        MvcResult result = mockMvc.perform(multipart("/api/v1/files")
-                        .file(mockMultipartFile))
-                .andExpect(status().is2xxSuccessful()).andReturn();
-        String responseBody = result.getResponse().getContentAsString();
+        MvcResult result = mockMvc.perform(
+                        multipart(UPLOAD_URL)
+                                .file(file)
+                )
+                .andExpect(status().is2xxSuccessful())
+                .andReturn();
 
-        ApiResponse<FileMetadataResponseDTO> response = objectMapper.readValue(responseBody, new TypeReference<>() {
-        });
+        ApiResponse<FileMetadataResponseDTO> response =
+                jacksonUtils.convertFromJson(
+                        result.getResponse().getContentAsString(),
+                        new TypeReference<>() {
+                        }
+                );
+
         assertThat(response.success()).isTrue();
+        assertThat(response.error()).isNull();
         assertThat(response.data()).isNotNull();
-        assertThat(response.apiError()).isNull();
 
-        assertThat(response.data().fileId()).isNotNull();
-        assertThat(response.data().fileName()).isNotNull();
-        assertThat(response.data().contentType()).isNotNull();
-        assertThat(response.data().size()).isNotNull();
-        assertThat(response.data().checksum()).isNotNull();
-        assertThat(response.data().state()).isNotNull();
-        assertThat(response.data().createdAt()).isNotNull();
-        assertThat(response.data().state()).isEqualTo(FileState.COMPLETED);
+        FileMetadataResponseDTO data = response.data();
+
+        assertThat(data.fileId()).isNotNull();
+        assertThat(data.fileName()).isNotNull();
+        assertThat(data.contentType()).isNotNull();
+        assertThat(data.size()).isNotNull();
+        assertThat(data.checksum()).isNotNull();
+        assertThat(data.state()).isEqualTo(FileState.COMPLETED);
+        assertThat(data.createdAt()).isNotNull();
+    }
+
+    private ApiError performBadRequest(
+            MockMultipartFile file
+    ) throws Exception {
+
+        MvcResult result = mockMvc.perform(
+                        multipart(UPLOAD_URL)
+                                .file(file)
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        ApiResponse<Void> response =
+                jacksonUtils.convertFromJson(
+                        result.getResponse().getContentAsString(),
+                        new TypeReference<>() {
+                        }
+                );
+
+        assertThat(response.success()).isFalse();
+        assertThat(response.data()).isNull();
+        assertThat(response.error()).isNotNull();
+
+        return response.error();
+    }
+
+    private void assertApiError(
+            ApiError actualError,
+            ErrorCode expectedErrorCode
+    ) {
+        assertThat(actualError.code())
+                .isEqualTo(expectedErrorCode.name());
+
+        assertThat(actualError.message())
+                .isEqualTo(expectedErrorCode.getDefaultMessage());
     }
 }

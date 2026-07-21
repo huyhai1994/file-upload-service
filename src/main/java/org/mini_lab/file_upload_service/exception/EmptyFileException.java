@@ -1,7 +1,9 @@
 package org.mini_lab.file_upload_service.exception;
 
+import org.mini_lab.file_upload_service.enums.ErrorCode;
+
 public class EmptyFileException extends RuntimeException {
     public EmptyFileException() {
-        super("File Empty");
+        super(ErrorCode.EMPTY_FILE.getDefaultMessage());
     }
 }
