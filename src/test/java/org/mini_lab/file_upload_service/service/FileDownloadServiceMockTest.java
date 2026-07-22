@@ -1,6 +1,5 @@
 package org.mini_lab.file_upload_service.service;
 
-import org.apache.commons.compress.parallel.InputStreamSupplier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mini_lab.file_upload_service.dto.FileDownloadResource;
