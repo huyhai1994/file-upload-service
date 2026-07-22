@@ -13,6 +13,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mini_lab.file_upload_service.support.MockObjectBuilder.*;
@@ -29,6 +33,9 @@ class FileMetadataRepositoryTest extends AbstractIntegrationTest {
     @Autowired
     EntityManager entityManager;
 
+    @Autowired
+    private Clock clock;
+
     @Test
     void markDeletingIfCompleted_whenFileStateIsCompleted_thenReturnOne() {
         FileMetadata fileMetadata = getValidCompletedFileMetadata();
@@ -37,7 +44,7 @@ class FileMetadataRepositoryTest extends AbstractIntegrationTest {
         entityManager.flush();
         entityManager.clear();
 
-        assertEquals(1, fileMetadataRepository.markDeletingIfCompleted(fileId));
+        assertEquals(1, fileMetadataRepository.markDeletingIfCompleted(fileId, LocalDateTime.now(clock)));
     }
 
 
@@ -50,7 +57,7 @@ class FileMetadataRepositoryTest extends AbstractIntegrationTest {
         entityManager.flush();
         entityManager.clear();
 
-        assertEquals(0, fileMetadataRepository.markDeletingIfCompleted(fileId));
+        assertEquals(0, fileMetadataRepository.markDeletingIfCompleted(fileId, LocalDateTime.now(clock)));
     }
 
     @Test
@@ -61,7 +68,7 @@ class FileMetadataRepositoryTest extends AbstractIntegrationTest {
         entityManager.flush();
         entityManager.clear();
 
-        assertEquals(1, fileMetadataRepository.markFailedIfUploading(fileId));
+        assertEquals(1, fileMetadataRepository.markFailedIfUploading(fileId, LocalDateTime.now(clock)));
 
     }
 
@@ -73,7 +80,7 @@ class FileMetadataRepositoryTest extends AbstractIntegrationTest {
         String checksum = "fake-checksum";
         entityManager.flush();
         entityManager.clear();
-        assertEquals(0, fileMetadataRepository.markCompletedIfUploading(fileId, checksum));
+        assertEquals(0, fileMetadataRepository.markCompletedIfUploading(fileId, checksum, LocalDateTime.now(clock)));
     }
 
     @Test
@@ -85,7 +92,7 @@ class FileMetadataRepositoryTest extends AbstractIntegrationTest {
         entityManager.clear();
 
         String checksum = "fake-checksum";
-        assertEquals(1, fileMetadataRepository.markCompletedIfUploading(fileId, checksum));
+        assertEquals(1, fileMetadataRepository.markCompletedIfUploading(fileId, checksum, LocalDateTime.now(clock)));
     }
 
     @Test
@@ -97,7 +104,7 @@ class FileMetadataRepositoryTest extends AbstractIntegrationTest {
         entityManager.clear();
 
         String checksum = "fake-checksum";
-        assertEquals(0, fileMetadataRepository.markCompletedIfUploading(fileId, checksum));
+        assertEquals(0, fileMetadataRepository.markCompletedIfUploading(fileId, checksum, LocalDateTime.now(clock)));
     }
 
 

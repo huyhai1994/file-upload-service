@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface FileMetadataRepository extends JpaRepository<FileMetadata, Long> {
@@ -14,21 +15,24 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, Long
     @Query("""
             update FileMetadata fm
             set fm.status = FileState.COMPLETED,
-                fm.checksum = :checksum
+                fm.checksum = :checksum,
+                fm.completedAt = :now
             where fm.id = :fileId
               and fm.status = FileState.UPLOADING
             """)
     int markCompletedIfUploading(@Param("fileId") Long fileId,
-                                 @Param("checksum") String checksum);
+                                 @Param("checksum") String checksum, LocalDateTime now);
 
     @Modifying
     @Query("""
                     update FileMetadata  fm
-                    set fm.status = FileState.FAILED
+                    set fm.status = FileState.FAILED,
+                        fm.failedAt = :now
                     where fm.id = :fileId
                     and fm.status = FileState.UPLOADING
             """)
-    int markFailedIfUploading(@Param("fileId") Long fileId);
+    int markFailedIfUploading(@Param("fileId") Long fileId,
+                              @Param("now") LocalDateTime now);
 
 
     @Modifying
@@ -38,7 +42,7 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, Long
                     where fm.id = :fileId
                     and fm.status = FileState.COMPLETED
             """)
-    int markDeletingIfCompleted(@Param("fileId") Long fileId);
+    int markDeletingIfCompleted(@Param("fileId") Long fileId, LocalDateTime now);
 
     @Modifying
     @Query("""
@@ -47,7 +51,7 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, Long
                     where fm.id = :fileId
                     and fm.status = FileState.DELETING
             """)
-    int markDeletedIfDeleting(@Param("fileId") Long fileId);
+    int markDeletedIfDeleting(@Param("fileId") Long fileId, LocalDateTime localDateTime);
 
     Optional<FileMetadata> getFileMetadataById(Long id);
 }

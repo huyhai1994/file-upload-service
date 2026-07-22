@@ -21,8 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getValidCompletedFileMetadata;
-import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getValidUploadingFileMetadata;
+import static org.mini_lab.file_upload_service.support.MockObjectBuilder.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -40,6 +39,8 @@ class FileMetadataStateManagerIntegrationTest extends AbstractIntegrationTest {
     private long uploadingFileMetadataId = 0;
 
     private long completedFileMetadataId = 0;
+
+    private long deletingFileMetadataId = 0;
 
     private final int threadCounts = 2;
 
@@ -66,6 +67,7 @@ class FileMetadataStateManagerIntegrationTest extends AbstractIntegrationTest {
         failureCount = new AtomicInteger();
         uploadingFileMetadataId = fileMetadataRepository.save(getValidUploadingFileMetadata()).getId();
         completedFileMetadataId = fileMetadataRepository.save(getValidCompletedFileMetadata()).getId();
+        deletingFileMetadataId = fileMetadataRepository.save(getValidDeletingFileMetadata()).getId();
     }
 
     @Test
@@ -211,4 +213,54 @@ class FileMetadataStateManagerIntegrationTest extends AbstractIntegrationTest {
 
     }
 
+    @Test
+    void whenTwoThreadsMarkDeletedAtSameTime_onlyOneThreadShouldSucceed()
+            throws InterruptedException {
+
+        for (int i = 0; i < threadCounts; i++) {
+            executorService.submit(() -> {
+                readyLatch.countDown();
+
+                try {
+                    startLatch.await();
+
+                    transactionTemplate.executeWithoutResult(status ->
+                            fileMetadataStateManager.markDeleted(
+                                    deletingFileMetadataId
+                            )
+                    );
+
+                    successCount.incrementAndGet();
+
+                } catch (Exception exception) {
+                    failureCount.incrementAndGet();
+
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+
+        assertTrue(
+                readyLatch.await(10, TimeUnit.SECONDS),
+                "Threads were not ready in time"
+        );
+
+        startLatch.countDown();
+
+        assertTrue(
+                doneLatch.await(10, TimeUnit.SECONDS),
+                "Threads did not finish in time"
+        );
+
+        assertEquals(1, successCount.get());
+        assertEquals(1, failureCount.get());
+
+        FileMetadata metadata = fileMetadataRepository.findById(deletingFileMetadataId)
+                .orElseThrow();
+
+        assertEquals(FileState.DELETED, metadata.getStatus());
+        assertNotNull(metadata.getChecksum());
+
+    }
 }
