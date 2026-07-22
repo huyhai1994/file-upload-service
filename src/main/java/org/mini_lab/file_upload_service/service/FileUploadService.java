@@ -19,7 +19,7 @@ import org.springframework.transaction.CannotCreateTransactionException;
 public class FileUploadService {
 
     private final FileUploadRequestExtractor fileUploadRequestExtractor;
-    private final FileRequestVerifyService fileRequestVerifyService;
+    private final FileVerifyService fileVerifyService;
     private final FileMetadataCreationService fileMetadataCreationService;
     private final FileMetadataStateManager fileMetadataStateManager;
     private final ObjectStorageClient objectStorageClient;
@@ -30,7 +30,7 @@ public class FileUploadService {
         FileUploadCommand command =
                 fileUploadRequestExtractor.extract(request);
 
-        fileRequestVerifyService.validate(command);
+        fileVerifyService.validate(command);
 
         FileMetadata metadata;
 

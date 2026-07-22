@@ -29,7 +29,7 @@ class FileUploadServiceMockTest {
     FileUploadRequestExtractor fileUploadRequestExtractor;
 
     @Mock
-    FileRequestVerifyService fileRequestVerifyService;
+    FileVerifyService fileVerifyService;
 
     @Mock
     FileMetadataCreationService fileMetadataCreationService;
@@ -79,7 +79,7 @@ class FileUploadServiceMockTest {
                 .thenReturn(command);
 
         doThrow(new EmptyFileException())
-                .when(fileRequestVerifyService)
+                .when(fileVerifyService)
                 .validate(command);
 
         assertThrows(
@@ -87,7 +87,7 @@ class FileUploadServiceMockTest {
                 () -> fileUploadService.processUploadFile(request)
         );
 
-        verify(fileRequestVerifyService).validate(command);
+        verify(fileVerifyService).validate(command);
 
         verifyNoInteractions(
                 fileMetadataCreationService,
@@ -106,7 +106,7 @@ class FileUploadServiceMockTest {
                 .thenReturn(command);
 
         doThrow(new InvalidFileExtensionException())
-                .when(fileRequestVerifyService)
+                .when(fileVerifyService)
                 .validate(command);
 
         assertThrows(
@@ -114,7 +114,7 @@ class FileUploadServiceMockTest {
                 () -> fileUploadService.processUploadFile(request)
         );
 
-        verify(fileRequestVerifyService).validate(command);
+        verify(fileVerifyService).validate(command);
 
         verifyNoInteractions(
                 fileMetadataCreationService,
@@ -133,7 +133,7 @@ class FileUploadServiceMockTest {
                 .thenReturn(command);
 
         doThrow(new InvalidMimeTypeException())
-                .when(fileRequestVerifyService)
+                .when(fileVerifyService)
                 .validate(command);
 
         assertThrows(
@@ -141,7 +141,7 @@ class FileUploadServiceMockTest {
                 () -> fileUploadService.processUploadFile(request)
         );
 
-        verify(fileRequestVerifyService).validate(command);
+        verify(fileVerifyService).validate(command);
 
         verifyNoInteractions(
                 fileMetadataCreationService,
@@ -160,7 +160,7 @@ class FileUploadServiceMockTest {
                 .thenReturn(command);
 
         doThrow(new InvalidFilenameException())
-                .when(fileRequestVerifyService)
+                .when(fileVerifyService)
                 .validate(command);
 
         assertThrows(
@@ -168,7 +168,7 @@ class FileUploadServiceMockTest {
                 () -> fileUploadService.processUploadFile(request)
         );
 
-        verify(fileRequestVerifyService).validate(command);
+        verify(fileVerifyService).validate(command);
 
         verifyNoInteractions(
                 fileMetadataCreationService,
@@ -199,7 +199,7 @@ class FileUploadServiceMockTest {
         );
 
         verify(fileUploadRequestExtractor).extract(request);
-        verify(fileRequestVerifyService).validate(command);
+        verify(fileVerifyService).validate(command);
 
         verify(fileMetadataCreationService)
                 .createUploadingMetadata(command);

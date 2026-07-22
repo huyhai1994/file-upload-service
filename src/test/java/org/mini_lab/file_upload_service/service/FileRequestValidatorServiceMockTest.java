@@ -22,7 +22,7 @@ class FileRequestValidatorServiceMockTest {
         when(validatorOrder2.order()).thenReturn(2);
         when(validatorOrder3.order()).thenReturn(3);
 
-        FileRequestVerifyService service = new FileRequestVerifyService(
+        FileVerifyService service = new FileVerifyService(
                 List.of(
                         validatorOrder3,
                         validatorOrder1,
