@@ -40,5 +40,14 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, Long
             """)
     int markDeletingIfCompleted(@Param("fileId") Long fileId);
 
+    @Modifying
+    @Query("""
+                    update FileMetadata  fm
+                    set fm.status = FileState.DELETED
+                    where fm.id = :fileId
+                    and fm.status = FileState.DELETING
+            """)
+    int markDeletedIfDeleting(@Param("fileId") Long fileId);
+
     Optional<FileMetadata> getFileMetadataById(Long id);
 }

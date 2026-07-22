@@ -29,6 +29,12 @@ public class FileMetadataStateManager {
         assertOnlyOneAffectedRow(affectedRowCount);
     }
 
+    @Transactional
+    public void markDeleted(Long fileId) {
+        int affectedRowCount = fileMetadataRepository.markDeletedIfDeleting(fileId);
+        assertOnlyOneAffectedRow(affectedRowCount);
+    }
+
     private void assertOnlyOneAffectedRow(int affectedRowCount) {
         if (affectedRowCount != 1) {
             throw new InvalidStateTransitionException();

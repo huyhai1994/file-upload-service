@@ -518,7 +518,7 @@ end note
 
 Khi upload file, hệ thống cần thực hiện nhiều bước kiểm tra khác nhau. Vì vậy, dự án tổ chức quy trình validation theo mô hình **Validation Pipeline**, trong đó mỗi bước kiểm tra được triển khai dưới dạng một **Strategy** thông qua interface `FileValidator`.
 
-`FileRequestVerifyService` đóng vai trò điều phối (orchestrator), lấy danh sách các `FileValidator`, sắp xếp theo `order` và thực thi lần lượt từng validator.
+`FileVerifyService` đóng vai trò điều phối (orchestrator), lấy danh sách các `FileValidator`, sắp xếp theo `order` và thực thi lần lượt từng validator.
 
 Mỗi validator chỉ chịu trách nhiệm cho một quy tắc kiểm tra cụ thể, chẳng hạn như file rỗng, kích thước file, tên file, extension hoặc MIME type. Nếu một validator phát hiện file không hợp lệ, nó sẽ ném exception và quá trình validation sẽ dừng ngay lập tức.
 
