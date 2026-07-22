@@ -30,6 +30,30 @@ class FileMetadataRepositoryTest extends AbstractIntegrationTest {
     EntityManager entityManager;
 
     @Test
+    void markDeletingIfCompleted_whenFileStateIsCompleted_thenReturnOne() {
+        FileMetadata fileMetadata = getValidCompletedFileMetadata();
+        FileMetadata persistedUploadingFileMetadata = fileMetadataRepository.saveAndFlush(fileMetadata);
+        Long fileId = persistedUploadingFileMetadata.getId();
+        entityManager.flush();
+        entityManager.clear();
+
+        assertEquals(1, fileMetadataRepository.markDeletingIfCompleted(fileId));
+    }
+
+
+    @Test
+    void markDeletingIfCompleted_whenFileStateNotCompleted_thenReturnZero() {
+        FileMetadata fileMetadata = getValidUploadingFileMetadata();
+        FileMetadata persistedUploadingFileMetadata = fileMetadataRepository.saveAndFlush(fileMetadata);
+        Long fileId = persistedUploadingFileMetadata.getId();
+
+        entityManager.flush();
+        entityManager.clear();
+
+        assertEquals(0, fileMetadataRepository.markDeletingIfCompleted(fileId));
+    }
+
+    @Test
     void markFailedIfUploading_whenUploadingFailed_changeStateFromUploadingToFailed() {
         FileMetadata fileMetadata = getValidUploadingFileMetadata();
         FileMetadata persistedUploadingFileMetadata = fileMetadataRepository.saveAndFlush(fileMetadata);
@@ -99,7 +123,7 @@ class FileMetadataRepositoryTest extends AbstractIntegrationTest {
         entityManager.flush();
         entityManager.clear();
 
-       assertThat(fileMetadataRepository.getFileMetadataById(persistedFileMetadata.getId())).isNotEmpty();
+        assertThat(fileMetadataRepository.getFileMetadataById(persistedFileMetadata.getId())).isNotEmpty();
 
     }
 

@@ -13,23 +13,32 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, Long
     @Modifying
     @Query("""
             update FileMetadata fm
-            set fm.status = org.mini_lab.file_upload_service.entity.FileState.COMPLETED,
+            set fm.status = FileState.COMPLETED,
                 fm.checksum = :checksum
             where fm.id = :fileId
-              and fm.status = org.mini_lab.file_upload_service.entity.FileState.UPLOADING
+              and fm.status = FileState.UPLOADING
             """)
     int markCompletedIfUploading(@Param("fileId") Long fileId,
                                  @Param("checksum") String checksum);
+
+    @Modifying
+    @Query("""
+                    update FileMetadata  fm
+                    set fm.status = FileState.FAILED
+                    where fm.id = :fileId
+                    and fm.status = FileState.UPLOADING
+            """)
+    int markFailedIfUploading(@Param("fileId") Long fileId);
 
 
     @Modifying
     @Query("""
                     update FileMetadata  fm
-                    set fm.status = org.mini_lab.file_upload_service.entity.FileState.FAILED
+                    set fm.status = FileState.DELETING
                     where fm.id = :fileId
-                    and fm.status = org.mini_lab.file_upload_service.entity.FileState.UPLOADING
+                    and fm.status = FileState.COMPLETED
             """)
-    int markFailedIfUploading(@Param("fileId") Long fileId);
+    int markDeletingIfCompleted(@Param("fileId") Long fileId);
 
     Optional<FileMetadata> getFileMetadataById(Long id);
 }
