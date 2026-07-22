@@ -585,16 +585,16 @@ $$
 ### 6.12 Query
 ### 6.13 Error Handling
 
-| Case                                                             | message                  | HTTP Status | Exception                     |
-| ---------------------------------------------------------------- | ------------------------ | ----------: | ----------------------------- |
-| File bị rỗng                                                     | File Empty               |         400 | EmptyFileException            |
-| Tên File Không hợp lệ                                            | File name not valid      |         400 | InvalidFilenameException      |
-| Đuôi file không hợp lệ                                           | File extension not valid |         400 | InvalidFileExtensionException |
-| Mime file không hợp lê                                           | Mime type  not valid     |         400 | InvalidMimeTypeException      |
-| đọc stream thất bại                                              |                          |             | FileReadException             |
-| Khi tạo metadata nhưng MYSQL không khả dụng                      | Internal Error           |         500 | InternalServerException       |
-| Khi upload object thất bại do sự cố mạng                         | Internal Error           |         500 | InternalServerException       |
-| Khi upload object thành công nhưng cập nhật `COMPLETED` thất bại | Internal Error           |         500 | InternalServerException       |
+| Case                                                             | message                  | HTTP Status | Exception                     | Error Code             |
+| ---------------------------------------------------------------- | ------------------------ | ----------: | ----------------------------- | ---------------------- |
+| File bị rỗng                                                     | File Empty               |         400 | EmptyFileException            | EMPTY_FILE             |
+| Tên File Không hợp lệ                                            | File name not valid      |         400 | InvalidFilenameException      | INVALID_FILENAME       |
+| Đuôi file không hợp lệ                                           | File extension not valid |         400 | InvalidFileExtensionException | INVALID_FILE_EXTENSION |
+| Mime file không hợp lê                                           | Mime type  not valid     |         400 | InvalidMimeTypeException      | INVALID_MIME_TYPE      |
+| đọc stream thất bại                                              |                          |             | FileReadException             | INTERNAL_SERVER_ERROR  |
+| Khi tạo metadata nhưng MYSQL không khả dụng                      | Internal Error           |         500 | InternalServerException       | INTERNAL_SERVER_ERROR  |
+| Khi upload object thất bại do sự cố mạng                         | Internal Error           |         500 | InternalServerException       | INTERNAL_SERVER_ERROR  |
+| Khi upload object thành công nhưng cập nhật `COMPLETED` thất bại | Internal Error           |         500 | InternalServerException       | INTERNAL_SERVER_ERROR  |
 ### 6.14 Test Cases
 
 #### 6.14.1 Test cases cho `File Upload Service`
@@ -710,16 +710,11 @@ $$
 
 - API trả về HTTP `500 Internal Server Error`.
 
-#### 6.14.2 `FileMetadataRepository`
-##### 6.14.2.1 Case nếu
-
 
 ## 7 Feature: Download file
 ### 7.1 Responsibility
 - Tính năng này cho phép người dùng tải file đã upload về máy
 - Phía client gửi fileid để hệ thống có thể truy vấn meta data rồi từ đó lấy object key để lấy file từ S3 về
-- Không được đọc toàn bộ object bằng byte[], vì file lớn sẽ chiếm heap
-- Nên stream trực tiếp từ S3 xuống http response
 ### 7.2 API / Entry Point
 #### 7.2.1 Endpoint
 
@@ -752,9 +747,6 @@ binary stream
 | 404    | Không tìm thấy file              |           |
 | 500    | Lỗi hệ thống                     |           |
 | 409    | File chưa ở trạng thái COMPLETED |           |
-
-
-
 
 ### 7.3 Sequence Flow
 Phase 1 :
@@ -892,30 +884,287 @@ MinIOObjectStorageClient ..|> ObjectStorageClient
 ```
 ### 7.5 Validation Rules
 ### 7.6 Transaction Boundary
-### 7.7 Concurrency Control / Locking
-### 7.8 DB Constraints / Index
-### 7.9 Query
-### 7.10 Error Handling
-### 7.11 Test Cases
-- Client ngắt download
-- App đang shutdown
-- Mạng tới MinIO lỗi
-- HTTP connection bị reset
+
+Ở đây transaction chỉ dùng để đọc metadata. Không được giữ transaction mở trong suốt quá trình stream vì:
+
+- Download có thể kéo dài.
+
+- Giữ database connection vô ích.
+
+- Client chậm có thể khiến transaction tồn tại rất lâu.
+
+
+Khi `prepareDownload()` kết thúc, transaction cũng kết thúc. Việc đọc MinIO và stream HTTP diễn ra sau đó.
+
+### 7.7 Data Consistency Strategy
+
+
+### 7.8 Concurrency Control / Locking
+### 7.9 DB Constraints / Index
+### 7.10 Query
+### 7.11 Error Handling
+
 ### 7.12 Trade Off
 #### 7.12.1 Streaming file to client
-- ở phase 1 sẽ sử dụng `StreamingResponseBody` thường chạy trên **một thread khác do async executor quản lý**, không tiếp tục chiếm servlet request thread ban đầu trong toàn bộ thời gian stream.
+- Không được đọc toàn bộ object bằng byte[], vì file lớn sẽ chiếm heap. Cho nên dự án sử dụng `StreamingResponseBody` ở phase 1.
+-  `StreamingResponseBody` thường chạy trên **một thread khác do async executor quản lý**, không tiếp tục chiếm servlet request thread ban đầu trong toàn bộ thời gian stream.
 - Nhưng backend vẫn chịu
   - một async thread
   - một connection tới mysql
   - một connection tới minio
   - trong suốt lúc file đang được tải, đường truyền mạng của server vẫn bị sử dụng liên tục.
 - Phase 2 sẽ sử dụng Presigned url do S3 cung cấp để người dùng có thể tải trực tiếp từ S3 mà không làm backend chịu tải.
-## 8 Observability
-### 8.1 Logging
-### 8.2 Metrics
-### 8.3 Alerting
 
-## 9 Design Decisions / Trade-offs
 
+
+### 7.13 Test Cases
+- Client ngắt download
+- App đang shutdown
+- Mạng tới MinIO lỗi
+- HTTP connection bị reset
+
+## 8 Feature: Delete File
+
+### 8.1 Responsibility
+
+- Hệ thống  hỗ trợ xóa file
+
+- Đồng thời đồng bộ trạng thái giữa Object Storage và cơ sở dữ liệu.
+
+### 8.2 API / Entry Point
+→ Feature được kích hoạt từ đâu: REST API, scheduler, message consumer hoặc internal service call.
+
+#### 8.2.1 Endpoint
+
+```http
+DELETE /api/v1/files/{fileId}
+```
+
+#### 8.2.2 Path Variables
+
+| Name   | Type | Required | Description |
+| ------ | ---- | -------- | ----------- |
+| fileId | Long | Yes      | ID của file |
+
+#### 8.2.3 Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "deleted": true
+  },
+  "error": null
+}
+```
+
+---
+
+
+
+### 8.3 Domain Rules / State Transition
+
+```plantuml
+@startuml  
+'https://plantuml.com/state-diagram  
+  
+[*] --> COMPLETED  
+COMPLETED --> DELETING: starts delete  
+DELETING --> DELETED: file deleted  
+DELETING --> COMPLETED: delete failed  
+DELETED --> [*]  
+  
+  
+@enduml
+```
+
+
+### 8.4 Class Diagram
+
+```plantuml
+@startuml  
+'https://plantuml.com/class-diagram  
+  
+class FileDeleteController{  
+    +deleteFile (fileId: Long): ResponseEntity<ApiResponse<FileDeleteResponse>>  
+  
+}  
+  
+class FileDeleteService{  
+    +processDeleteFile(fileId: Long): FileDeleteResponse;  
+}  
+  
+record FileDeleteResponse {  
+    -success: boolean;  
+}  
+  
+class FileMetadataStateManager{  
+    +markDeleting(fileId: Long): void;  
+    +markDeleted(fileId: Long) void;  
+    +updateCompletedFromDeletingState(fileId: Long): void;  
+}  
+  
+interface FileMetadataRepository {  
+   +markDeletingIfCompleted (fileId: Long): int ;  
+   +markDeletedIfDeleting (fileId: Long): int ;  
+   +markCompletedIfDeleting(fileId: Long): int;  
+}  
+  
+interface ObjectStorageClient {  
+  +upload(command: FileUploadCommand): UploadObjectResult  
+  +delete(objectKey: String): void  
+}  
+  
+class MinIOObjectStorageClient {}  
+  
+FileDeleteController --> FileDeleteService: invoke  
+  
+FileDeleteService --> ObjectStorageClient: use  
+FileDeleteService --> FileMetadataStateManager: use  
+FileDeleteService --> FileDeleteResponse: returns  
+  
+MinIOObjectStorageClient ..|> ObjectStorageClient: implements  
+FileMetadataStateManager --> FileMetadataRepository: depends on  
+  
+@enduml
+```
+
+
+### 8.5 Sequence Flow
+```plantuml
+
+@startuml  
+title Delete File Flow  
+  
+autonumber  
+  
+actor User  
+participant "File Upload Service" as FUS  
+database "MySQL" as MySQL  
+database "MinIO" as MinIO  
+  
+User -> FUS: DELETE /api/v1/files/{fileId}  
+FUS -> MySQL: find metadata by fileId  
+  
+alt metadata not found  
+    FUS --> User: 404 File Not Found  
+else File state != COMPLETED  
+    FUS --> User: 409 File Not Available  
+else File is available  
+    FUS -> MySQL:  COMPLETED -> DELETING  
+    alt db down  
+        FUS -> User: 500 Internal Error  
+    else  
+        FUS -> MinIO : delete object  
+        FUS -> MySQL:   DELETING -> DELETED  
+        FUS --> User: 200 OK  
+    end  
+end  
+  
+@enduml
+```
+### 8.6 Validation Rules
+
+
+#### 8.6.1 File Not Found
+
+- Cần kiểm tra xem file meta data có tồn tại hay không
+
+- Lớp `FileDeleteService` sẽ đảm nhiệm việc này
+
+- Nếu file không tồn tại sẽ ném mã lỗi `FileNotFoundException`
+
+### 8.7 Failure Matrix / Recovery Strategy
+
+| Step          | Failure | State DB  | State external | Result known? | Retry safe? | Recovery     |
+| ------------- | ------- | --------- | -------------- | ------------- | ----------- | ------------ |
+| Mark Deleting | DB down | COMPLETED | object exists  | Yes           | Yes         | Client retry |
+|               |         |           |                |               |             |              |
+
+
+
+### 8.8 Transaction Boundary
+→ Transaction bắt đầu và kết thúc ở đâu.
+
+→ Những thao tác nào nằm trong cùng một transaction.
+
+→ External I/O nào nằm ngoài transaction.
+
+### 8.9 Data Consistency Strategy
+
+→ Các hệ thống giữ consistency bằng cách nào.
+
+→ Partial failure tạo ra trạng thái bất nhất nào.
+
+→ Compensation, retry hoặc reconciliation xử lý ra sao.
+
+→ Source of truth nằm ở đâu.
+
+
+### 8.10 Concurrency Control / Locking
+→ Các request đồng thời được kiểm soát thế nào.
+
+→ Dùng optimistic locking, pessimistic locking, CAS hay idempotency.
+
+→ Race condition nào có thể xảy ra.
+
+### 8.11 DB Constraints / Indexes
+→ Database cưỡng chế invariant nào.
+
+→ Primary key, unique constraint, foreign key, check constraint.
+
+→ Index nào hỗ trợ query và concurrency pattern.
+
+### 8.12 Queries
+→ Các query thực tế của feature.
+
+→ Điều kiện lọc, thứ tự sắp xếp, pagination và locking clause.
+
+→ Query nào cần kiểm tra execution plan.
+
+### 8.13 Error Handling
+→ Lỗi domain, validation, database và external system được phân loại thế nào.
+
+→ Exception được map sang HTTP status hoặc error code nào.
+
+→ Lỗi nào retry được và lỗi nào không.
+
+### 8.14 Observability
+
+#### 8.14.1 Logging
+→ Điều tra một request hoặc một failure cụ thể.
+
+→ Ghi context cần thiết như requestId, entityId, state, duration và error type.
+
+#### 8.14.2 Metrics
+→ Theo dõi xu hướng và sức khỏe toàn hệ thống.
+
+→ Request count, success rate, error rate, latency, throughput và consistency violation.
+
+#### 8.14.3 Tracing
+→ Theo dõi một request đi qua nhiều component hoặc service.
+
+→ Quan sát DB query, external storage call và network latency.
+
+#### 8.14.4 Alerting
+→ Xác định tín hiệu nào cần cảnh báo.
+
+→ Error rate, latency, missing object, retry backlog hoặc reconciliation backlog.
+
+### 8.15 Trade-offs / Design Decisions
+
+→ Vì sao chọn cách này thay vì cách khác?
+
+→ Đổi lại hệ thống mất gì?
+
+→ Rủi ro nào được chấp nhận?
+
+→ Khi nào cần đổi thiết kế?
+
+### 8.16 Test Cases
+
+→ Kiểm thử happy path, validation failure, domain rule violation, partial failure, concurrency và recovery.
+
+→ Bao gồm unit test, integration test và end-to-end test khi cần.
 
 
