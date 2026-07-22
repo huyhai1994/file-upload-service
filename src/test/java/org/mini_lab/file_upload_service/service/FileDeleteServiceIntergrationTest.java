@@ -10,12 +10,15 @@ import org.mini_lab.file_upload_service.support.DatabaseConnectionResetSimulator
 import org.mini_lab.file_upload_service.support.MockObjectBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.CannotCreateTransactionException;
 
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.doAnswer;
 
 
 @SpringBootTest
@@ -27,6 +30,9 @@ class FileDeleteServiceIntergrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private FileDeleteService fileDeleteService;
+
+    @MockitoSpyBean
+    private FileMetadataStateManager fileMetadataStateManager;
 
     @AfterEach
     void cleanUp() {
@@ -43,10 +49,25 @@ class FileDeleteServiceIntergrationTest extends AbstractIntegrationTest {
 
 
     @Test
-    void processDeleteFile_whenDBShutdown_thenThrowsCannotCreateTransactionException() throws IOException {
+    void processDeleteFile_whenDBConnectionReset_thenThrowsCannotCreateTransactionException() throws IOException {
         try (DatabaseConnectionResetSimulator ignored = new DatabaseConnectionResetSimulator(mysqlProxy)) {
             assertThrows(CannotCreateTransactionException.class, () -> fileDeleteService.processDeleteFile(fileId));
         }
+    }
+
+    @Test
+    void processDeleteFile_whenMarkDeletingThenDbConnectionReset_thenThrowsCannotCreateTransactionException() {
+        doAnswer(invocation -> {
+            try (DatabaseConnectionResetSimulator ignored = new DatabaseConnectionResetSimulator(mysqlProxy)) {
+                return invocation.callRealMethod();
+            }
+        }).when(fileMetadataStateManager).markDeleting(fileId);
+
+        assertThrows(
+                JpaSystemException.class,
+                () -> fileDeleteService.processDeleteFile(fileId)
+        );
+
     }
 
 

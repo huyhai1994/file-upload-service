@@ -8,6 +8,7 @@ import org.mini_lab.file_upload_service.enums.ErrorCode;
 import org.mini_lab.file_upload_service.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.CannotCreateTransactionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -135,6 +136,20 @@ class ExceptionControllerAdviceTest {
         ResponseEntity<ApiResponse<Void>> response =
                 advice.handleInternalServerError(
                         new CannotCreateTransactionException("Can't create transaction")
+                );
+
+        assertErrorResponse(
+                response,
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                ErrorCode.INTERNAL_SERVER_ERROR
+        );
+    }
+
+    @Test
+    void handleJpaSystemException_shouldReturnInternalServerError() {
+        ResponseEntity<ApiResponse<Void>> response =
+                advice.handleInternalServerError(
+                        new JpaSystemException(new RuntimeException())
                 );
 
         assertErrorResponse(

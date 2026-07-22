@@ -7,6 +7,7 @@ import org.mini_lab.file_upload_service.enums.ErrorCode;
 import org.mini_lab.file_upload_service.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -77,6 +78,7 @@ public class ExceptionControllerAdvice {
 
     @ExceptionHandler({
             FileReadException.class,
+            JpaSystemException.class,
             InternalServerException.class,
             CannotCreateTransactionException.class
     })
