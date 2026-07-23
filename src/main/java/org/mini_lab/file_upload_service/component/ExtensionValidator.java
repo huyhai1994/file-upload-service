@@ -14,6 +14,7 @@ public class ExtensionValidator implements FileValidator {
 
     private final ExtensionPropertiesConfigurations extensionPropertiesConfigurations;
 
+    private final ExtensionExtractor extensionExtractor;
 
     @Override
     public int order() {
@@ -24,13 +25,7 @@ public class ExtensionValidator implements FileValidator {
     public void validate(FileUploadCommand command) {
         List<String> allowedList = extensionPropertiesConfigurations.getAllowedList();
         String fileName = command.originalFileName();
-        String extension = null;
-        if (fileName != null) {
-            extension = fileName
-                    .substring(fileName.lastIndexOf('.') + 1);
-        }
-        if (extension == null)
-            throw new InvalidFileExtensionException();
+        String extension = extensionExtractor.extract(fileName).orElseThrow(InvalidFileExtensionException::new);
         if (!allowedList.contains(extension))
             throw new InvalidFileExtensionException();
     }
