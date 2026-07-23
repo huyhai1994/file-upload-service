@@ -1,4 +1,4 @@
-package org.mini_lab.file_upload_service.service;
+package org.mini_lab.file_upload_service.service.validator;
 
 import org.mini_lab.file_upload_service.component.FileValidator;
 import org.mini_lab.file_upload_service.dto.FileUploadCommand;

@@ -10,6 +10,7 @@ import org.mini_lab.file_upload_service.configuration.MinioConfigProperties;
 import org.mini_lab.file_upload_service.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.dto.UploadObjectResult;
 import org.mini_lab.file_upload_service.exception.ObjectStorageException;
+import org.mini_lab.file_upload_service.service.s3.MinIOObjectStorageClient;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;

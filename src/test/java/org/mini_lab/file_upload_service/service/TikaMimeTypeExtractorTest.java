@@ -2,6 +2,7 @@ package org.mini_lab.file_upload_service.service;
 
 import org.apache.tika.Tika;
 import org.junit.jupiter.api.Test;
+import org.mini_lab.file_upload_service.service.extractor.TikaMimeTypeExtractor;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mini_lab.file_upload_service.support.MockObjectBuilder.getMismatchMimeMultipartFile;

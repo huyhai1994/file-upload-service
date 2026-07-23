@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.mini_lab.file_upload_service.configuration.MimeTypePropertiesConfiguration;
 import org.mini_lab.file_upload_service.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.exception.InvalidMimeTypeException;
-import org.mini_lab.file_upload_service.service.MimeTypeExtractor;
+import org.mini_lab.file_upload_service.service.extractor.MimeTypeExtractor;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;

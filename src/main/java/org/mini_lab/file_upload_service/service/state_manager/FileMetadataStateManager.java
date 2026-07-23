@@ -1,4 +1,4 @@
-package org.mini_lab.file_upload_service.service;
+package org.mini_lab.file_upload_service.service.state_manager;
 
 import lombok.RequiredArgsConstructor;
 import org.mini_lab.file_upload_service.exception.InvalidStateTransitionException;

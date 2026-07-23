@@ -3,6 +3,7 @@ package org.mini_lab.file_upload_service.service;
 import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.component.FileValidator;
 import org.mini_lab.file_upload_service.dto.FileUploadCommand;
+import org.mini_lab.file_upload_service.service.validator.FileVerifyService;
 import org.mockito.InOrder;
 
 import java.util.List;

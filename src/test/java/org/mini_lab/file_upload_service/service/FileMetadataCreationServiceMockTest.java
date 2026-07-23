@@ -9,6 +9,7 @@ import org.mini_lab.file_upload_service.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.entity.FileMetadata;
 import org.mini_lab.file_upload_service.entity.FileState;
 import org.mini_lab.file_upload_service.repository.FileMetadataRepository;
+import org.mini_lab.file_upload_service.service.upload.FileMetadataCreationService;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;

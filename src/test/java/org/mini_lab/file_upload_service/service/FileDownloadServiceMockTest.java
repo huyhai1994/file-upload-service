@@ -7,6 +7,8 @@ import org.mini_lab.file_upload_service.entity.FileMetadata;
 import org.mini_lab.file_upload_service.exception.FileNotAvailableException;
 import org.mini_lab.file_upload_service.exception.FileNotFoundException;
 import org.mini_lab.file_upload_service.repository.FileMetadataRepository;
+import org.mini_lab.file_upload_service.service.download.FileDownloadService;
+import org.mini_lab.file_upload_service.service.s3.ObjectStorageClient;
 import org.mini_lab.file_upload_service.support.MockObjectBuilder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
