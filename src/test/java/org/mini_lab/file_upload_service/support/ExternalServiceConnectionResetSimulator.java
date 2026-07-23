@@ -8,12 +8,12 @@ import eu.rekawek.toxiproxy.Proxy;
 import java.io.IOException;
 
 @Slf4j
-public class DatabaseConnectionResetSimulator implements AutoCloseable {
+public class ExternalServiceConnectionResetSimulator implements AutoCloseable {
 
     public static final String RESET_CONNECTION = "RESET_CONNECTION";
     private final Proxy proxy;
 
-    public DatabaseConnectionResetSimulator(Proxy proxy) throws IOException {
+    public ExternalServiceConnectionResetSimulator(Proxy proxy) throws IOException {
         this.proxy = proxy;
         proxy.toxics().resetPeer(RESET_CONNECTION, ToxicDirection.DOWNSTREAM, 0L);
     }
