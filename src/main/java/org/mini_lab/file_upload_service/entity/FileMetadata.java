@@ -5,17 +5,20 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.cglib.core.Local;
 
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 
 @Entity
 @Getter
 @Setter
-@Table(name = "file_metadata")
+@Table(name = "file_metadata",
+        indexes = {
+                @Index(
+                        name = "idx_status_deleting_at",
+                        columnList = "status,deleting_at"
+                ),
+        })
 public class FileMetadata {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
