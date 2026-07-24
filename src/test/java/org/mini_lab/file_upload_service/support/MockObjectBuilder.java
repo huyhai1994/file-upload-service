@@ -1,6 +1,7 @@
 package org.mini_lab.file_upload_service.support;
 
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.mini_lab.file_upload_service.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.dto.UploadObjectResult;
 import org.mini_lab.file_upload_service.entity.FileMetadata;
@@ -72,20 +73,24 @@ public class MockObjectBuilder {
     }
 
     public static @NotNull FileMetadata getValidUploadingFileMetadata() {
-        FileMetadata fileMetadata = new FileMetadata();
-
-        fileMetadata.setTitle("Avatar of John Doe");
-        fileMetadata.setFileName("avatar.png");
-        fileMetadata.setContentType("image/png");
-        fileMetadata.setExtension("png");
-        fileMetadata.setObjectKey("2026/07/08/8b7c3d0d-f0d1-4a7c-a3a4-7d4ef2e81a55.png");
-        fileMetadata.setSize(512_384L);
-        fileMetadata.setChecksum("9d5ed678fe57bcca610140957afab571f6d9f1f5e53e7d8d0b8f359bd2d96d8e");
+        FileMetadata fileMetadata = createFileMetadata();
         fileMetadata.setStatus(FileState.UPLOADING);
         return fileMetadata;
     }
 
     public static @NotNull FileMetadata getValidCompletedFileMetadata() {
+        FileMetadata fileMetadata = createFileMetadata();
+        fileMetadata.setStatus(FileState.COMPLETED);
+        return fileMetadata;
+    }
+
+    public static @NotNull FileMetadata getValidDeletingFileMetadata() {
+        FileMetadata fileMetadata = createFileMetadata();
+        fileMetadata.setStatus(FileState.DELETING);
+        return fileMetadata;
+    }
+
+    private static @NonNull FileMetadata createFileMetadata() {
         FileMetadata fileMetadata = new FileMetadata();
 
         fileMetadata.setTitle("Avatar of John Doe");
@@ -95,7 +100,6 @@ public class MockObjectBuilder {
         fileMetadata.setObjectKey("2026/07/08/8b7c3d0d-f0d1-4a7c-a3a4-7d4ef2e81a55.png");
         fileMetadata.setSize(512_384L);
         fileMetadata.setChecksum("9d5ed678fe57bcca610140957afab571f6d9f1f5e53e7d8d0b8f359bd2d96d8e");
-        fileMetadata.setStatus(FileState.COMPLETED);
         return fileMetadata;
     }
 

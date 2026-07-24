@@ -16,7 +16,8 @@ public enum ErrorCode {
     FILE_NOT_FOUND("File not found"),
     FILE_NOT_AVAILABLE("File not available"),
 
-    INTERNAL_SERVER_ERROR("Internal server error");;
+    INTERNAL_SERVER_ERROR("Internal server error"),
+    CANNOT_READ_METADATA("Cannot read file metadata");
 
 
     private final String defaultMessage;

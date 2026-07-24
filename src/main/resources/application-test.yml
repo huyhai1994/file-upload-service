@@ -45,3 +45,7 @@ file:
       - image/png
       - application/pdf
       - text/plain
+  file-delete-recovery:
+    deleting-timeout: 10m
+    scheduler-interval: 1m
+    batch-size: 10

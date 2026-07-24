@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.mini_lab.file_upload_service.dto.ApiResponse;
 import org.mini_lab.file_upload_service.dto.FileMetadataResponseDTO;
 import org.mini_lab.file_upload_service.dto.UploadRequestObjectDTO;
-import org.mini_lab.file_upload_service.service.FileUploadService;
+import org.mini_lab.file_upload_service.service.upload.FileUploadService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

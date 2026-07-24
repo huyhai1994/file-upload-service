@@ -1,4 +1,4 @@
-package org.mini_lab.file_upload_service.service;
+package org.mini_lab.file_upload_service.service.extractor;
 
 import org.springframework.web.multipart.MultipartFile;
 

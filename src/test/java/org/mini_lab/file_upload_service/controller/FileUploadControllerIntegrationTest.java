@@ -98,7 +98,7 @@ class FileUploadControllerIntegrationTest extends AbstractIntegrationTest {
 
         MvcResult result = mockMvc.perform(
                         multipart(UPLOAD_URL)
-                                .file(file)
+                                .file(file).param("title","hello")
                 )
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
@@ -123,6 +123,7 @@ class FileUploadControllerIntegrationTest extends AbstractIntegrationTest {
         assertThat(data.checksum()).isNotNull();
         assertThat(data.state()).isEqualTo(FileState.COMPLETED);
         assertThat(data.createdAt()).isNotNull();
+        assertThat(data.title()).isNotNull();
     }
 
     private ApiError performBadRequest(

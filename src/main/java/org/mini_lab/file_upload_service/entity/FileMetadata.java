@@ -7,11 +7,18 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Setter
-@Table(name = "file_metadata")
+@Table(name = "file_metadata",
+        indexes = {
+                @Index(
+                        name = "idx_status_deleting_at",
+                        columnList = "status,deleting_at"
+                ),
+        })
 public class FileMetadata {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,5 +59,19 @@ public class FileMetadata {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
+    @Column(name = "failed_at")
+    private LocalDateTime failedAt;
+
+    @Column(name = "uploading_at")
+    private LocalDateTime uploadingAt;
+
+    @Column(name = "deleting_at")
+    private LocalDateTime deletingAt;
 
 }

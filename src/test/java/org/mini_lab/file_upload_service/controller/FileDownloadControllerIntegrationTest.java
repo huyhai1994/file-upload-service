@@ -7,7 +7,7 @@ import org.mini_lab.file_upload_service.dto.UploadRequestObjectDTO;
 import org.mini_lab.file_upload_service.entity.FileMetadata;
 import org.mini_lab.file_upload_service.enums.ErrorCode;
 import org.mini_lab.file_upload_service.repository.FileMetadataRepository;
-import org.mini_lab.file_upload_service.service.FileUploadService;
+import org.mini_lab.file_upload_service.service.upload.FileUploadService;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.mini_lab.file_upload_service.support.MockObjectBuilder;
 import org.springframework.beans.factory.annotation.Autowired;

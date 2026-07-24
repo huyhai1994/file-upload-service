@@ -1,4 +1,4 @@
-package org.mini_lab.file_upload_service.service;
+package org.mini_lab.file_upload_service.service.download;
 
 import lombok.RequiredArgsConstructor;
 import org.mini_lab.file_upload_service.dto.FileDownloadResource;
@@ -7,6 +7,7 @@ import org.mini_lab.file_upload_service.entity.FileState;
 import org.mini_lab.file_upload_service.exception.FileNotAvailableException;
 import org.mini_lab.file_upload_service.exception.FileNotFoundException;
 import org.mini_lab.file_upload_service.repository.FileMetadataRepository;
+import org.mini_lab.file_upload_service.service.s3.ObjectStorageClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

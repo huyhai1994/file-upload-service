@@ -1,4 +1,4 @@
-package org.mini_lab.file_upload_service.service;
+package org.mini_lab.file_upload_service.service.upload;
 
 import lombok.RequiredArgsConstructor;
 import org.hibernate.TransactionException;
@@ -10,6 +10,9 @@ import org.mini_lab.file_upload_service.entity.FileMetadata;
 import org.mini_lab.file_upload_service.entity.FileState;
 import org.mini_lab.file_upload_service.exception.InternalServerException;
 import org.mini_lab.file_upload_service.exception.ObjectStorageException;
+import org.mini_lab.file_upload_service.service.state_manager.FileMetadataStateManager;
+import org.mini_lab.file_upload_service.service.validator.FileVerifyService;
+import org.mini_lab.file_upload_service.service.s3.ObjectStorageClient;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
@@ -19,7 +22,7 @@ import org.springframework.transaction.CannotCreateTransactionException;
 public class FileUploadService {
 
     private final FileUploadRequestExtractor fileUploadRequestExtractor;
-    private final FileRequestVerifyService fileRequestVerifyService;
+    private final FileVerifyService fileVerifyService;
     private final FileMetadataCreationService fileMetadataCreationService;
     private final FileMetadataStateManager fileMetadataStateManager;
     private final ObjectStorageClient objectStorageClient;
@@ -30,13 +33,12 @@ public class FileUploadService {
         FileUploadCommand command =
                 fileUploadRequestExtractor.extract(request);
 
-        fileRequestVerifyService.validate(command);
+        fileVerifyService.validate(command);
 
         FileMetadata metadata;
 
         try {
-            metadata =
-                    fileMetadataCreationService.createUploadingMetadata(command);
+            metadata = fileMetadataCreationService.createUploadingMetadata(command);
         } catch (DataAccessException | TransactionException | CannotCreateTransactionException exception) {
             throw new InternalServerException();
         }
@@ -93,6 +95,7 @@ public class FileUploadService {
         return FileMetadataResponseDTO.builder()
                 .fileId(metadata.getId())
                 .fileName(metadata.getFileName())
+                .title(metadata.getTitle())
                 .contentType(metadata.getContentType())
                 .extension(metadata.getExtension())
                 .size(metadata.getSize())
