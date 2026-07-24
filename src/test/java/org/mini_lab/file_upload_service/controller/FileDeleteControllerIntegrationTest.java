@@ -21,8 +21,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@AutoConfigureMockMvc
 @ActiveProfiles("test")
+@AutoConfigureMockMvc(addFilters = false)
 class FileDeleteControllerIntegrationTest extends AbstractIntegrationTest {
 
     private static final String DELETE_FILE_URL = "/api/v1/files/{fileId}";
