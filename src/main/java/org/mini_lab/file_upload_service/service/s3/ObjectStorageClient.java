@@ -11,4 +11,6 @@ public interface ObjectStorageClient {
     void delete(String objectKey);
 
     InputStream getObject(String objectKey);
+
+    boolean exists(String objectKey);
 }

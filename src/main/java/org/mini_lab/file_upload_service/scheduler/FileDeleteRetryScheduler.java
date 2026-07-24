@@ -15,16 +15,27 @@ import java.util.concurrent.TimeUnit;
 @Component
 @RequiredArgsConstructor
 public class FileDeleteRetryScheduler {
+
     private final TimedOutFileFinder timedOutFileFinder;
     private final FileDeleteRetryService fileDeleteRetryService;
 
     @Scheduled(
-            fixedRateString = "${file.file-delete-recovery.scheduler-interval}",
+            fixedDelayString = "${file.file-delete-recovery.scheduler-interval}",
             timeUnit = TimeUnit.MINUTES
     )
     public void retryTimedOutDeletingFiles() {
-        List<Long> ids = timedOutFileFinder.findTimedOutFileIds();
-        ids.forEach(fileDeleteRetryService::retryTimedOutFile);
-    }
+        List<Long> fileIds = timedOutFileFinder.findTimedOutFileIds();
 
+        for (Long fileId : fileIds) {
+            try {
+                fileDeleteRetryService.retryTimedOutFile(fileId);
+            } catch (Exception ex) {
+                log.error(
+                        "RETRY_TIMED_OUT_DELETING_FILE_FAILED fileId={}",
+                        fileId,
+                        ex
+                );
+            }
+        }
+    }
 }

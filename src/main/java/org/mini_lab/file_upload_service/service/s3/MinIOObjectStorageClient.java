@@ -1,6 +1,7 @@
 package org.mini_lab.file_upload_service.service.s3;
 
 import io.minio.*;
+import io.minio.errors.*;
 import lombok.RequiredArgsConstructor;
 import org.mini_lab.file_upload_service.component.MessageDigestFactory;
 import org.mini_lab.file_upload_service.configuration.MinioConfigProperties;
@@ -77,6 +78,21 @@ public class MinIOObjectStorageClient implements ObjectStorageClient {
             );
         } catch (Exception e) {
             throw new ObjectStorageException(String.format("Can't get Object with %s", objectKey), e);
+        }
+    }
+
+    @Override
+    public boolean exists(String objectKey) {
+        try {
+            minioClient.statObject(
+                    StatObjectArgs.builder()
+                            .bucket(minioConfigProperties.bucketName())
+                            .object(objectKey)
+                            .build()
+            );
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 }
