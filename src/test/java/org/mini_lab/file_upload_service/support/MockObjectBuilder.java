@@ -6,6 +6,7 @@ import org.mini_lab.file_upload_service.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.dto.UploadObjectResult;
 import org.mini_lab.file_upload_service.entity.FileMetadata;
 import org.mini_lab.file_upload_service.entity.FileState;
+import org.mini_lab.file_upload_service.entity.User;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
