@@ -1,4 +1,4 @@
-package org.mini_lab.file_upload_service.enums;
+package org.mini_lab.file_upload_service.enums.file_upload;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

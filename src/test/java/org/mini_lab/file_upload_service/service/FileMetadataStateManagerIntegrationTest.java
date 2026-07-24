@@ -5,7 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.entity.FileMetadata;
 import org.mini_lab.file_upload_service.entity.FileState;
-import org.mini_lab.file_upload_service.exception.InvalidStateTransitionException;
+import org.mini_lab.file_upload_service.exception.file_upload.InvalidStateTransitionException;
 import org.mini_lab.file_upload_service.repository.FileMetadataRepository;
 import org.mini_lab.file_upload_service.service.state_manager.FileMetadataStateManager;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;

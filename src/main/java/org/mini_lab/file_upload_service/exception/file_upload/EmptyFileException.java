@@ -1,6 +1,6 @@
-package org.mini_lab.file_upload_service.exception;
+package org.mini_lab.file_upload_service.exception.file_upload;
 
-import org.mini_lab.file_upload_service.enums.ErrorCode;
+import org.mini_lab.file_upload_service.enums.file_upload.ErrorCode;
 
 public class EmptyFileException extends RuntimeException {
     public EmptyFileException() {

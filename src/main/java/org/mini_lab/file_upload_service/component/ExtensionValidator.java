@@ -2,8 +2,8 @@ package org.mini_lab.file_upload_service.component;
 
 import lombok.RequiredArgsConstructor;
 import org.mini_lab.file_upload_service.configuration.ExtensionPropertiesConfigurations;
-import org.mini_lab.file_upload_service.dto.FileUploadCommand;
-import org.mini_lab.file_upload_service.exception.InvalidFileExtensionException;
+import org.mini_lab.file_upload_service.dto.file_upload.FileUploadCommand;
+import org.mini_lab.file_upload_service.exception.file_upload.InvalidFileExtensionException;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

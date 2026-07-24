@@ -2,8 +2,8 @@ package org.mini_lab.file_upload_service.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.mini_lab.file_upload_service.dto.ApiResponse;
-import org.mini_lab.file_upload_service.dto.FileMetadataResponseDTO;
-import org.mini_lab.file_upload_service.dto.UploadRequestObjectDTO;
+import org.mini_lab.file_upload_service.dto.file_upload.FileMetadataResponseDTO;
+import org.mini_lab.file_upload_service.dto.file_upload.UploadRequestObjectDTO;
 import org.mini_lab.file_upload_service.service.upload.FileUploadService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

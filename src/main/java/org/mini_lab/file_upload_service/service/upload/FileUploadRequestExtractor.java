@@ -1,7 +1,7 @@
 package org.mini_lab.file_upload_service.service.upload;
 
-import org.mini_lab.file_upload_service.dto.FileUploadCommand;
-import org.mini_lab.file_upload_service.dto.UploadRequestObjectDTO;
+import org.mini_lab.file_upload_service.dto.file_upload.FileUploadCommand;
+import org.mini_lab.file_upload_service.dto.file_upload.UploadRequestObjectDTO;
 import org.springframework.stereotype.Service;
 
 @Service

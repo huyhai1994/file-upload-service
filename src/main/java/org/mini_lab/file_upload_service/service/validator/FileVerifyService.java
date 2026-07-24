@@ -1,9 +1,9 @@
 package org.mini_lab.file_upload_service.service.validator;
 
 import org.mini_lab.file_upload_service.component.FileValidator;
-import org.mini_lab.file_upload_service.dto.FileUploadCommand;
+import org.mini_lab.file_upload_service.dto.file_upload.FileUploadCommand;
 import org.mini_lab.file_upload_service.entity.FileState;
-import org.mini_lab.file_upload_service.exception.FileNotAvailableException;
+import org.mini_lab.file_upload_service.exception.file_upload.FileNotAvailableException;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
