@@ -1,5 +1,6 @@
 package org.mini_lab.file_upload_service.component;
 
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -10,6 +11,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ExtensionExtractor {
 
+    @WithSpan("extension-extractor")
     public Optional<String> extract(String fileName) {
         if (fileName == null || fileName.isBlank()) {
             return Optional.empty();

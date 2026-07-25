@@ -1,5 +1,6 @@
 package org.mini_lab.file_upload_service.service.validator;
 
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import org.mini_lab.file_upload_service.component.FileValidator;
 import org.mini_lab.file_upload_service.dto.file_upload.FileUploadCommand;
 import org.mini_lab.file_upload_service.entity.FileState;
@@ -21,6 +22,7 @@ public class FileVerifyService {
                         .toList();
     }
 
+    @WithSpan("request-validate")
     public void validate(FileUploadCommand command) {
         fileValidators.forEach(fileValidator -> fileValidator.validate(command));
     }

@@ -1,5 +1,6 @@
 package org.mini_lab.file_upload_service.service.upload;
 
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import org.mini_lab.file_upload_service.component.ExtensionExtractor;
 import org.mini_lab.file_upload_service.component.ObjectKeyGenerator;
@@ -23,6 +24,7 @@ public class FileMetadataCreationService {
     private final Clock clock;
 
     @Transactional
+    @WithSpan("create-uploading-metadata")
     public FileMetadata createUploadingMetadata(FileUploadCommand command) {
 
         String fileName = command.originalFileName();

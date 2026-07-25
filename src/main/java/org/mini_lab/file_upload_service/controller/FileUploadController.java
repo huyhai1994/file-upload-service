@@ -1,5 +1,6 @@
 package org.mini_lab.file_upload_service.controller;
 
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import org.mini_lab.file_upload_service.dto.ApiResponse;
 import org.mini_lab.file_upload_service.dto.file_upload.FileMetadataResponseDTO;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 public class FileUploadController {
     private final FileUploadService fileUploadService;
 
+    @WithSpan("upload-controller")
     @PostMapping
     ResponseEntity<ApiResponse<FileMetadataResponseDTO>> upload(@ModelAttribute UploadRequestObjectDTO request) {
         FileMetadataResponseDTO fileMetadataResponseDTO = fileUploadService.processUploadFile(request);

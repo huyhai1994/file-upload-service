@@ -1,5 +1,6 @@
 package org.mini_lab.file_upload_service.service.upload;
 
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.TransactionException;
 import org.mini_lab.file_upload_service.dto.file_upload.FileMetadataResponseDTO;
@@ -27,6 +28,7 @@ public class FileUploadService {
     private final FileMetadataStateManager fileMetadataStateManager;
     private final ObjectStorageClient objectStorageClient;
 
+    @WithSpan("process-upload-file")
     public FileMetadataResponseDTO processUploadFile(
             UploadRequestObjectDTO request
     ) {
