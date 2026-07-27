@@ -18,6 +18,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -159,59 +160,66 @@ class AuthenticationControllerIntegrationTest
 
         CountDownLatch readyLatch = new CountDownLatch(REQUEST_COUNTS);
         CountDownLatch startLatch = new CountDownLatch(1);
-        CountDownLatch doneLatch = new CountDownLatch(REQUEST_COUNTS);
-
-        List<Future<MvcResult>> futures = new ArrayList<>();
+        List<CompletableFuture<MvcResult>> futures = new ArrayList<>();
 
         for (int i = 0; i < REQUEST_COUNTS; i++) {
-            Future<MvcResult> future = executorService.submit(() -> {
+            CompletableFuture<MvcResult> future = CompletableFuture.supplyAsync(() -> {
                 readyLatch.countDown();
 
                 try {
                     startLatch.await();
                     return performRegister(requestBody);
-                } finally {
-                    doneLatch.countDown();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
-            });
-
+            }, executorService);
             futures.add(future);
         }
 
-        assertThat(readyLatch.await(5, TimeUnit.SECONDS)).isTrue();
 
+        assertThat(readyLatch.await(5, TimeUnit.SECONDS)).
+                isTrue();
         startLatch.countDown();
+        CompletableFuture<Void> allRequests = CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
 
-        assertThat(doneLatch.await(10, TimeUnit.SECONDS)).isTrue();
+        allRequests.get(10, TimeUnit.SECONDS);
 
-        List<Integer> statuses = new ArrayList<>();
+        List<MvcResult> results = futures.stream().map(CompletableFuture::join)
+                .toList();
 
-        for (Future<MvcResult> future : futures) {
-            MvcResult result = future.get(10, TimeUnit.SECONDS);
-            statuses.add(result.getResponse().getStatus());
-        }
+
+        List<Integer> statuses = results.stream().map(result -> result.getResponse().getStatus()).toList();
+
 
         assertThat(statuses)
-                .containsExactlyInAnyOrder(
+                .
+
+                containsExactlyInAnyOrder(
                         HttpStatus.CREATED.value(),
                         HttpStatus.CONFLICT.value()
                 );
 
-        assertThat(userRepository.count()).isEqualTo(1);
+        assertThat(userRepository.count()).
+
+                isEqualTo(1);
 
         User savedUser = userRepository
                 .findByUsername("concurrentuser")
                 .orElseThrow();
 
         assertThat(savedUser.getUsername())
-                .isEqualTo("concurrentuser");
+                .
+
+                isEqualTo("concurrentuser");
 
         assertThat(
                 passwordEncoder.matches(
                         "password123",
                         savedUser.getPasswordHash()
                 )
-        ).isTrue();
+        ).
+
+                isTrue();
     }
 
     @Test
