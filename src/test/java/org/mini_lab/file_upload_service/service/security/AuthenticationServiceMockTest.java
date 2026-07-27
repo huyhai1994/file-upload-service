@@ -73,7 +73,7 @@ class AuthenticationServiceMockTest {
 
         verify(passwordVerifyService, never()).verify(anyString());
         verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).save(any());
+        verify(userRepository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -97,7 +97,7 @@ class AuthenticationServiceMockTest {
 
         verify(usernameVerifyService).verify(normalizedUsername);
         verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).save(any());
+        verify(userRepository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -123,7 +123,7 @@ class AuthenticationServiceMockTest {
 
         verify(usernameVerifyService).verify(normalizedUsername);
         verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).save(any());
+        verify(userRepository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -147,7 +147,7 @@ class AuthenticationServiceMockTest {
 
         verify(passwordVerifyService, never()).verify(anyString());
         verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).save(any());
+        verify(userRepository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -165,7 +165,7 @@ class AuthenticationServiceMockTest {
         when(passwordEncoder.encode(request.password()))
                 .thenReturn(passwordHash);
 
-        when(userRepository.save(any(User.class)))
+        when(userRepository.saveAndFlush(any(User.class)))
                 .thenAnswer(invocation -> {
                     User user = invocation.getArgument(0);
                     user.setId(userId);
@@ -178,7 +178,7 @@ class AuthenticationServiceMockTest {
         ArgumentCaptor<User> userCaptor =
                 ArgumentCaptor.forClass(User.class);
 
-        verify(userRepository).save(userCaptor.capture());
+        verify(userRepository).saveAndFlush(userCaptor.capture());
 
         User savedUser = userCaptor.getValue();
 
@@ -210,7 +210,7 @@ class AuthenticationServiceMockTest {
                 .encode(request.password());
 
         inOrder.verify(userRepository)
-                .save(any(User.class));
+                .saveAndFlush(any(User.class));
     }
 
     @Test
@@ -227,7 +227,7 @@ class AuthenticationServiceMockTest {
         when(passwordEncoder.encode(request.password()))
                 .thenReturn(passwordHash);
 
-        when(userRepository.save(any(User.class)))
+        when(userRepository.saveAndFlush(any(User.class)))
                 .thenThrow(new DataIntegrityViolationException(
                         "Duplicate username"
                 ));
@@ -240,6 +240,6 @@ class AuthenticationServiceMockTest {
         verify(usernameVerifyService).verify(normalizedUsername);
         verify(passwordVerifyService).verify(request.password());
         verify(passwordEncoder).encode(request.password());
-        verify(userRepository).save(any(User.class));
+        verify(userRepository).saveAndFlush(any(User.class));
     }
 }
