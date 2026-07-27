@@ -1,6 +1,6 @@
 package org.mini_lab.file_upload_service.controller;
 
-import lombok.NonNull;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.mini_lab.file_upload_service.dto.ApiResponse;
 import org.mini_lab.file_upload_service.dto.security.RegisterRequest;
@@ -21,7 +21,10 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
     @PostMapping("register")
-    ResponseEntity<ApiResponse<RegisterResponse>> register(@NonNull @RequestBody RegisterRequest request) {
+    ResponseEntity<ApiResponse<RegisterResponse>> register(
+            @Valid
+            @RequestBody
+            RegisterRequest request) {
         RegisterResponse response = authenticationService.register(request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)

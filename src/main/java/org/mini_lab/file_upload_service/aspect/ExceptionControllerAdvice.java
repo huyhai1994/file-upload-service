@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.CannotCreateTransactionException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -102,23 +103,6 @@ public class ExceptionControllerAdvice {
         );
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleUnexpectedException(
-            Exception exception
-    ) {
-        log.error(
-                "Unexpected exception: exceptionType={}, message={}",
-                exception.getClass().getSimpleName(),
-                exception.getMessage(),
-                exception
-        );
-
-        return buildErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                ErrorCode.INTERNAL_SERVER_ERROR
-        );
-    }
-
     private ResponseEntity<ApiResponse<Void>> buildErrorResponse(
             HttpStatus status,
             ErrorCode errorCode
@@ -150,6 +134,16 @@ public class ExceptionControllerAdvice {
         return buildErrorResponse(
                 HttpStatus.BAD_REQUEST,
                 ErrorCode.USERNAME_LENGTH_EXCEEDED
+        );
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException exception
+    ) {
+        return buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.VALIDATION_ERROR
         );
     }
 

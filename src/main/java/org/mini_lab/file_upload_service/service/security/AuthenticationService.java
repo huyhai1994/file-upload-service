@@ -37,7 +37,7 @@ public class AuthenticationService {
         );
 
         try {
-            User savedUser = userRepository.save(user);
+            User savedUser = userRepository.saveAndFlush(user);
 
             return new RegisterResponse(
                     savedUser.getId(),
