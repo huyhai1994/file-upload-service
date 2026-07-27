@@ -5,7 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.entity.FileMetadata;
 import org.mini_lab.file_upload_service.entity.FileState;
-import org.mini_lab.file_upload_service.exception.ObjectStorageException;
+import org.mini_lab.file_upload_service.exception.file_upload.ObjectStorageException;
 import org.mini_lab.file_upload_service.repository.FileMetadataRepository;
 import org.mini_lab.file_upload_service.service.delete.FileDeleteService;
 import org.mini_lab.file_upload_service.service.s3.ObjectStorageClient;

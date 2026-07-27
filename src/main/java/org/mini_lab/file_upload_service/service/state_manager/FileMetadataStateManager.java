@@ -1,7 +1,7 @@
 package org.mini_lab.file_upload_service.service.state_manager;
 
 import lombok.RequiredArgsConstructor;
-import org.mini_lab.file_upload_service.exception.InvalidStateTransitionException;
+import org.mini_lab.file_upload_service.exception.file_upload.InvalidStateTransitionException;
 import org.mini_lab.file_upload_service.repository.FileMetadataRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

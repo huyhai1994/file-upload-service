@@ -2,10 +2,10 @@ package org.mini_lab.file_upload_service.controller;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mini_lab.file_upload_service.dto.FileMetadataResponseDTO;
-import org.mini_lab.file_upload_service.dto.UploadRequestObjectDTO;
+import org.mini_lab.file_upload_service.dto.file_upload.FileMetadataResponseDTO;
+import org.mini_lab.file_upload_service.dto.file_upload.UploadRequestObjectDTO;
 import org.mini_lab.file_upload_service.entity.FileMetadata;
-import org.mini_lab.file_upload_service.enums.ErrorCode;
+import org.mini_lab.file_upload_service.enums.file_upload.ErrorCode;
 import org.mini_lab.file_upload_service.repository.FileMetadataRepository;
 import org.mini_lab.file_upload_service.service.upload.FileUploadService;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class FileDownloadControllerIntegrationTest extends AbstractIntegrationTest {
 

@@ -2,7 +2,7 @@ package org.mini_lab.file_upload_service.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
-import org.mini_lab.file_upload_service.dto.FileDownloadResource;
+import org.mini_lab.file_upload_service.dto.file_upload.FileDownloadResource;
 import org.mini_lab.file_upload_service.service.download.FileDownloadService;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -4,8 +4,12 @@ import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.dto.ApiError;
 import org.mini_lab.file_upload_service.dto.ApiResponse;
 import org.mini_lab.file_upload_service.entity.FileState;
-import org.mini_lab.file_upload_service.enums.ErrorCode;
-import org.mini_lab.file_upload_service.exception.*;
+import org.mini_lab.file_upload_service.enums.file_upload.ErrorCode;
+import org.mini_lab.file_upload_service.exception.file_upload.*;
+import org.mini_lab.file_upload_service.exception.security.PasswordLengthExceededException;
+import org.mini_lab.file_upload_service.exception.security.PasswordTooShortException;
+import org.mini_lab.file_upload_service.exception.security.UsernameAlreadyExistsException;
+import org.mini_lab.file_upload_service.exception.security.UsernameLengthExceededException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaSystemException;
@@ -183,5 +187,61 @@ class ExceptionControllerAdviceTest {
 
         assertThat(error.message())
                 .isEqualTo(expectedErrorCode.getDefaultMessage());
+    }
+
+    @Test
+    void handleUsernameAlreadyExists_shouldReturnConflict() {
+        ResponseEntity<ApiResponse<Void>> response =
+                advice.handleUsernameAlreadyExists(
+                        new UsernameAlreadyExistsException("hai")
+                );
+
+        assertErrorResponse(
+                response,
+                HttpStatus.CONFLICT,
+                ErrorCode.USERNAME_ALREADY_EXISTS
+        );
+    }
+
+    @Test
+    void handleUsernameLengthExceeded_shouldReturnBadRequest() {
+        ResponseEntity<ApiResponse<Void>> response =
+                advice.handleUsernameLengthExceeded(
+                        new UsernameLengthExceededException(100)
+                );
+
+        assertErrorResponse(
+                response,
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.USERNAME_LENGTH_EXCEEDED
+        );
+    }
+
+    @Test
+    void handlePasswordTooShort_shouldReturnBadRequest() {
+        ResponseEntity<ApiResponse<Void>> response =
+                advice.handlePasswordTooShort(
+                        new PasswordTooShortException(8)
+                );
+
+        assertErrorResponse(
+                response,
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.PASSWORD_TOO_SHORT
+        );
+    }
+
+    @Test
+    void handlePasswordLengthExceeded_shouldReturnBadRequest() {
+        ResponseEntity<ApiResponse<Void>> response =
+                advice.handlePasswordLengthExceeded(
+                        new PasswordLengthExceededException(72)
+                );
+
+        assertErrorResponse(
+                response,
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.PASSWORD_LENGTH_EXCEEDED
+        );
     }
 }

@@ -5,9 +5,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.dto.ApiError;
 import org.mini_lab.file_upload_service.dto.ApiResponse;
-import org.mini_lab.file_upload_service.dto.FileMetadataResponseDTO;
+import org.mini_lab.file_upload_service.dto.file_upload.FileMetadataResponseDTO;
 import org.mini_lab.file_upload_service.entity.FileState;
-import org.mini_lab.file_upload_service.enums.ErrorCode;
+import org.mini_lab.file_upload_service.enums.file_upload.ErrorCode;
 import org.mini_lab.file_upload_service.repository.FileMetadataRepository;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.mini_lab.file_upload_service.support.MockObjectBuilder;
@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class FileUploadControllerIntegrationTest extends AbstractIntegrationTest {
 

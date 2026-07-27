@@ -2,7 +2,7 @@ package org.mini_lab.file_upload_service.service.extractor;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.tika.Tika;
-import org.mini_lab.file_upload_service.exception.FileReadException;
+import org.mini_lab.file_upload_service.exception.file_upload.FileReadException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 

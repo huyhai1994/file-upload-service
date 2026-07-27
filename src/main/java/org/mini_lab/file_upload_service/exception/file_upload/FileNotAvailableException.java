@@ -1,4 +1,4 @@
-package org.mini_lab.file_upload_service.exception;
+package org.mini_lab.file_upload_service.exception.file_upload;
 
 import org.mini_lab.file_upload_service.entity.FileState;
 

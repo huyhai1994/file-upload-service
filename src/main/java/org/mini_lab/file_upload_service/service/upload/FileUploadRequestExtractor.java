@@ -1,11 +1,13 @@
 package org.mini_lab.file_upload_service.service.upload;
 
-import org.mini_lab.file_upload_service.dto.FileUploadCommand;
-import org.mini_lab.file_upload_service.dto.UploadRequestObjectDTO;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
+import org.mini_lab.file_upload_service.dto.file_upload.FileUploadCommand;
+import org.mini_lab.file_upload_service.dto.file_upload.UploadRequestObjectDTO;
 import org.springframework.stereotype.Service;
 
 @Service
 public class FileUploadRequestExtractor {
+    @WithSpan("request-extract")
     public FileUploadCommand extract(UploadRequestObjectDTO request) {
         return FileUploadCommand.builder()
                 .file(request.file())

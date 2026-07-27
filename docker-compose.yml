@@ -3,23 +3,44 @@ services:
     build: .
     ports:
       - "20001:20001"
+
     environment:
       SPRING_PROFILES_ACTIVE: dev
+
+      OTEL_SERVICE_NAME: file-upload-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment=dev,service.version=0.0.1
+      OTEL_TRACES_SAMPLER: always_on
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
     depends_on:
       mysql:
         condition: service_healthy
       minio:
         condition: service_started
+
     restart: unless-stopped
+
     networks:
       - backend-network
 
   mysql:
     image: mysql:8.0
+
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: file_service
+
     restart: unless-stopped
+
     ports:
       - "3308:3306"
     healthcheck:
@@ -29,21 +50,28 @@ services:
       retries: 10
     volumes:
       - mysql-data:/var/lib/mysql
+
     networks:
       - backend-network
 
   minio:
     image: minio/minio
+
     command: server /data --console-address ":9001"
+
     environment:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio123
+
     restart: unless-stopped
+
     ports:
       - "9000:9000"
       - "9001:9001"
+
     volumes:
       - minio-data:/data
+
     networks:
       - backend-network
 

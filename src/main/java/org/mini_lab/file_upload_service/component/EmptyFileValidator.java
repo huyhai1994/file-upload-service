@@ -1,7 +1,7 @@
 package org.mini_lab.file_upload_service.component;
 
-import org.mini_lab.file_upload_service.dto.FileUploadCommand;
-import org.mini_lab.file_upload_service.exception.EmptyFileException;
+import org.mini_lab.file_upload_service.dto.file_upload.FileUploadCommand;
+import org.mini_lab.file_upload_service.exception.file_upload.EmptyFileException;
 import org.springframework.stereotype.Component;
 
 @Component

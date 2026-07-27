@@ -1,15 +1,16 @@
 package org.mini_lab.file_upload_service.service.upload;
 
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.TransactionException;
-import org.mini_lab.file_upload_service.dto.FileMetadataResponseDTO;
-import org.mini_lab.file_upload_service.dto.FileUploadCommand;
-import org.mini_lab.file_upload_service.dto.UploadObjectResult;
-import org.mini_lab.file_upload_service.dto.UploadRequestObjectDTO;
+import org.mini_lab.file_upload_service.dto.file_upload.FileMetadataResponseDTO;
+import org.mini_lab.file_upload_service.dto.file_upload.FileUploadCommand;
+import org.mini_lab.file_upload_service.dto.file_upload.UploadObjectResult;
+import org.mini_lab.file_upload_service.dto.file_upload.UploadRequestObjectDTO;
 import org.mini_lab.file_upload_service.entity.FileMetadata;
 import org.mini_lab.file_upload_service.entity.FileState;
-import org.mini_lab.file_upload_service.exception.InternalServerException;
-import org.mini_lab.file_upload_service.exception.ObjectStorageException;
+import org.mini_lab.file_upload_service.exception.file_upload.InternalServerException;
+import org.mini_lab.file_upload_service.exception.file_upload.ObjectStorageException;
 import org.mini_lab.file_upload_service.service.state_manager.FileMetadataStateManager;
 import org.mini_lab.file_upload_service.service.validator.FileVerifyService;
 import org.mini_lab.file_upload_service.service.s3.ObjectStorageClient;
@@ -27,6 +28,7 @@ public class FileUploadService {
     private final FileMetadataStateManager fileMetadataStateManager;
     private final ObjectStorageClient objectStorageClient;
 
+    @WithSpan("process-upload-file")
     public FileMetadataResponseDTO processUploadFile(
             UploadRequestObjectDTO request
     ) {
