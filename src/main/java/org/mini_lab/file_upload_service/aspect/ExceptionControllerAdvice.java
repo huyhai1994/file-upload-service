@@ -5,6 +5,10 @@ import org.mini_lab.file_upload_service.dto.ApiError;
 import org.mini_lab.file_upload_service.dto.ApiResponse;
 import org.mini_lab.file_upload_service.enums.file_upload.ErrorCode;
 import org.mini_lab.file_upload_service.exception.file_upload.*;
+import org.mini_lab.file_upload_service.exception.security.PasswordLengthExceededException;
+import org.mini_lab.file_upload_service.exception.security.PasswordTooShortException;
+import org.mini_lab.file_upload_service.exception.security.UsernameAlreadyExistsException;
+import org.mini_lab.file_upload_service.exception.security.UsernameLengthExceededException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaSystemException;
@@ -127,5 +131,45 @@ public class ExceptionControllerAdvice {
         return ResponseEntity
                 .status(status)
                 .body(ApiResponse.failure(error));
+    }
+
+    @ExceptionHandler(UsernameAlreadyExistsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUsernameAlreadyExists(
+            UsernameAlreadyExistsException exception
+    ) {
+        return buildErrorResponse(
+                HttpStatus.CONFLICT,
+                ErrorCode.USERNAME_ALREADY_EXISTS
+        );
+    }
+
+    @ExceptionHandler(UsernameLengthExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUsernameLengthExceeded(
+            UsernameLengthExceededException exception
+    ) {
+        return buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.USERNAME_LENGTH_EXCEEDED
+        );
+    }
+
+    @ExceptionHandler(PasswordTooShortException.class)
+    public ResponseEntity<ApiResponse<Void>> handlePasswordTooShort(
+            PasswordTooShortException exception
+    ) {
+        return buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.PASSWORD_TOO_SHORT
+        );
+    }
+
+    @ExceptionHandler(PasswordLengthExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handlePasswordLengthExceeded(
+            PasswordLengthExceededException exception
+    ) {
+        return buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.PASSWORD_LENGTH_EXCEEDED
+        );
     }
 }

@@ -32,10 +32,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class UserAccountRegisterServiceMockTest {
+class AuthenticationServiceMockTest {
 
     @InjectMocks
-    private UserAccountRegisterService userAccountRegisterService;
+    private AuthenticationService authenticationService;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -68,7 +68,7 @@ class UserAccountRegisterServiceMockTest {
 
         assertThrows(
                 UsernameLengthExceededException.class,
-                () -> userAccountRegisterService.register(request)
+                () -> authenticationService.register(request)
         );
 
         verify(passwordVerifyService, never()).verify(anyString());
@@ -92,7 +92,7 @@ class UserAccountRegisterServiceMockTest {
 
         assertThrows(
                 PasswordTooShortException.class,
-                () -> userAccountRegisterService.register(request)
+                () -> authenticationService.register(request)
         );
 
         verify(usernameVerifyService).verify(normalizedUsername);
@@ -118,7 +118,7 @@ class UserAccountRegisterServiceMockTest {
 
         assertThrows(
                 PasswordLengthExceededException.class,
-                () -> userAccountRegisterService.register(request)
+                () -> authenticationService.register(request)
         );
 
         verify(usernameVerifyService).verify(normalizedUsername);
@@ -142,7 +142,7 @@ class UserAccountRegisterServiceMockTest {
 
         assertThrows(
                 UsernameAlreadyExistsException.class,
-                () -> userAccountRegisterService.register(request)
+                () -> authenticationService.register(request)
         );
 
         verify(passwordVerifyService, never()).verify(anyString());
@@ -173,7 +173,7 @@ class UserAccountRegisterServiceMockTest {
                 });
 
         RegisterResponse response =
-                userAccountRegisterService.register(request);
+                authenticationService.register(request);
 
         ArgumentCaptor<User> userCaptor =
                 ArgumentCaptor.forClass(User.class);
@@ -234,7 +234,7 @@ class UserAccountRegisterServiceMockTest {
 
         assertThrows(
                 UsernameAlreadyExistsException.class,
-                () -> userAccountRegisterService.register(request)
+                () -> authenticationService.register(request)
         );
 
         verify(usernameVerifyService).verify(normalizedUsername);
