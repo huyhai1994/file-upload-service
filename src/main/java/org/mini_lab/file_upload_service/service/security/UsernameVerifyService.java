@@ -20,7 +20,7 @@ public class UsernameVerifyService {
     }
 
     private void validateLength(String username) {
-        if (username.length() > MAX_USERNAME_LENGTH) {
+        if (username.length() >= MAX_USERNAME_LENGTH) {
             throw new UsernameLengthExceededException(MAX_USERNAME_LENGTH);
         }
     }
