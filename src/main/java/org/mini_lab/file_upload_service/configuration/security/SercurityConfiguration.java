@@ -1,4 +1,4 @@
-package org.mini_lab.file_upload_service.configuration;
+package org.mini_lab.file_upload_service.configuration.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
