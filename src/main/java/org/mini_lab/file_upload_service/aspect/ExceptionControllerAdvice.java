@@ -12,6 +12,7 @@ import org.mini_lab.file_upload_service.exception.security.UsernameLengthExceede
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaSystemException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -164,6 +165,16 @@ public class ExceptionControllerAdvice {
         return buildErrorResponse(
                 HttpStatus.BAD_REQUEST,
                 ErrorCode.PASSWORD_LENGTH_EXCEEDED
+        );
+    }
+
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUserNotFound(
+            UsernameNotFoundException exception
+    ) {
+        return buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.USER_NOT_FOUND
         );
     }
 }

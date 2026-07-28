@@ -207,7 +207,7 @@ class ExceptionControllerAdviceTest {
     void handleUsernameLengthExceeded_shouldReturnBadRequest() {
         ResponseEntity<ApiResponse<Void>> response =
                 advice.handleUsernameLengthExceeded(
-                        new UsernameLengthExceededException(100)
+                        new UsernameLengthExceededException(4, 50 )
                 );
 
         assertErrorResponse(

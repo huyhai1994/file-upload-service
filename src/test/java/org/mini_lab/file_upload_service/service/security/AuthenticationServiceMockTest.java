@@ -20,19 +20,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mini_lab.file_upload_service.support.MockPasswordBuilder.PASSWORD_HASH;
+import static org.mini_lab.file_upload_service.support.MockPasswordBuilder.VALID_PASSWORD;
+import static org.mini_lab.file_upload_service.support.MockUserBuilder.DEFAULT_USERNAME;
+import static org.mini_lab.file_upload_service.support.MockUserBuilder.NORMALIZED_USERNAME;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthenticationServiceMockTest {
+
 
     @InjectMocks
     private AuthenticationService authenticationService;
@@ -54,15 +52,14 @@ class AuthenticationServiceMockTest {
 
     @Test
     void register_whenUsernameTooLong_thenThrowExceptionAndNotSave() {
-        RegisterRequest request =
-                new RegisterRequest(" A".repeat(100), "password123");
-
+        String rawUsername = "A".repeat(100);
         String normalizedUsername = "a".repeat(100);
 
-        when(normalizeUsernameService.normalizeUsername(request.username()))
-                .thenReturn(normalizedUsername);
+        RegisterRequest request = request(rawUsername, VALID_PASSWORD);
 
-        doThrow(new UsernameLengthExceededException(100))
+        mockNormalizedUsername(request, normalizedUsername);
+
+        doThrow(new UsernameLengthExceededException(4, 50))
                 .when(usernameVerifyService)
                 .verify(normalizedUsername);
 
@@ -71,46 +68,35 @@ class AuthenticationServiceMockTest {
                 () -> authenticationService.register(request)
         );
 
-        verify(passwordVerifyService, never()).verify(anyString());
-        verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).saveAndFlush(any());
+        verifyRegistrationStoppedBeforePasswordValidation();
     }
 
     @Test
     void register_whenPasswordTooShort_thenThrowExceptionAndNotSave() {
-        RegisterRequest request =
-                new RegisterRequest(" Hai ", "1234567");
+        String password = "1234567";
+        RegisterRequest request = requestWithPassword(password);
 
-        String normalizedUsername = "hai";
-
-        when(normalizeUsernameService.normalizeUsername(request.username()))
-                .thenReturn(normalizedUsername);
+        mockNormalizedUsername(request);
 
         doThrow(new PasswordTooShortException(8))
                 .when(passwordVerifyService)
-                .verify(request.password());
+                .verify(password);
 
         assertThrows(
                 PasswordTooShortException.class,
                 () -> authenticationService.register(request)
         );
 
-        verify(usernameVerifyService).verify(normalizedUsername);
-        verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).saveAndFlush(any());
+        verify(usernameVerifyService).verify(NORMALIZED_USERNAME);
+        verifyRegistrationStoppedBeforeEncoding();
     }
 
     @Test
     void register_whenPasswordTooLong_thenThrowExceptionAndNotSave() {
         String password = "a".repeat(73);
+        RegisterRequest request = requestWithPassword(password);
 
-        RegisterRequest request =
-                new RegisterRequest(" Hai ", password);
-
-        String normalizedUsername = "hai";
-
-        when(normalizeUsernameService.normalizeUsername(request.username()))
-                .thenReturn(normalizedUsername);
+        mockNormalizedUsername(request);
 
         doThrow(new PasswordLengthExceededException(72))
                 .when(passwordVerifyService)
@@ -121,49 +107,105 @@ class AuthenticationServiceMockTest {
                 () -> authenticationService.register(request)
         );
 
-        verify(usernameVerifyService).verify(normalizedUsername);
-        verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).saveAndFlush(any());
+        verify(usernameVerifyService).verify(NORMALIZED_USERNAME);
+        verifyRegistrationStoppedBeforeEncoding();
     }
 
     @Test
     void register_whenUserExists_thenThrowExceptionAndNotSave() {
-        RegisterRequest request =
-                new RegisterRequest(" Hai ", "password123");
+        RegisterRequest request = validRequest();
 
-        String normalizedUsername = "hai";
+        mockNormalizedUsername(request);
 
-        when(normalizeUsernameService.normalizeUsername(request.username()))
-                .thenReturn(normalizedUsername);
-
-        doThrow(new UsernameAlreadyExistsException(normalizedUsername))
+        doThrow(new UsernameAlreadyExistsException(NORMALIZED_USERNAME))
                 .when(usernameVerifyService)
-                .verify(normalizedUsername);
+                .verify(NORMALIZED_USERNAME);
 
         assertThrows(
                 UsernameAlreadyExistsException.class,
                 () -> authenticationService.register(request)
         );
 
-        verify(passwordVerifyService, never()).verify(anyString());
-        verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).saveAndFlush(any());
+        verifyRegistrationStoppedBeforePasswordValidation();
     }
 
     @Test
     void register_whenRequestIsValid_thenEncodePasswordAndSaveUser() {
-        RegisterRequest request =
-                new RegisterRequest(" Hai ", "password123");
-
-        String normalizedUsername = "hai";
-        String passwordHash = "$2a$10$encoded-password";
+        RegisterRequest request = validRequest();
         UUID userId = UUID.randomUUID();
 
+        mockSuccessfulRegistration(request, userId);
+
+        RegisterResponse response =
+                authenticationService.register(request);
+
+        User savedUser = captureSavedUser();
+
+        assertEquals(NORMALIZED_USERNAME, savedUser.getUsername());
+        assertEquals(PASSWORD_HASH, savedUser.getPasswordHash());
+        assertNotEquals(VALID_PASSWORD, savedUser.getPasswordHash());
+
+        assertEquals(userId, response.id());
+        assertEquals(NORMALIZED_USERNAME, response.username());
+
+        verifyRegistrationOrder(request);
+    }
+
+    @Test
+    void register_whenDatabaseUniqueConstraintIsViolated_thenThrowUsernameAlreadyExistsException() {
+        RegisterRequest request = validRequest();
+
+        mockNormalizedUsername(request);
+        mockPasswordEncoding(request);
+
+        when(userRepository.saveAndFlush(any(User.class)))
+                .thenThrow(new DataIntegrityViolationException(
+                        "Duplicate username"
+                ));
+
+        assertThrows(
+                UsernameAlreadyExistsException.class,
+                () -> authenticationService.register(request)
+        );
+
+        verifyCompleteRegistrationAttempt(request);
+    }
+
+    private RegisterRequest validRequest() {
+        return request(DEFAULT_USERNAME, VALID_PASSWORD);
+    }
+
+    private RegisterRequest requestWithPassword(String password) {
+        return request(DEFAULT_USERNAME, password);
+    }
+
+    private RegisterRequest request(String username, String password) {
+        return new RegisterRequest(username, password);
+    }
+
+    private void mockNormalizedUsername(RegisterRequest request) {
+        mockNormalizedUsername(request, NORMALIZED_USERNAME);
+    }
+
+    private void mockNormalizedUsername(
+            RegisterRequest request,
+            String normalizedUsername
+    ) {
         when(normalizeUsernameService.normalizeUsername(request.username()))
                 .thenReturn(normalizedUsername);
+    }
 
+    private void mockPasswordEncoding(RegisterRequest request) {
         when(passwordEncoder.encode(request.password()))
-                .thenReturn(passwordHash);
+                .thenReturn(PASSWORD_HASH);
+    }
+
+    private void mockSuccessfulRegistration(
+            RegisterRequest request,
+            UUID userId
+    ) {
+        mockNormalizedUsername(request);
+        mockPasswordEncoding(request);
 
         when(userRepository.saveAndFlush(any(User.class)))
                 .thenAnswer(invocation -> {
@@ -171,24 +213,37 @@ class AuthenticationServiceMockTest {
                     user.setId(userId);
                     return user;
                 });
+    }
 
-        RegisterResponse response =
-                authenticationService.register(request);
-
-        ArgumentCaptor<User> userCaptor =
+    private User captureSavedUser() {
+        ArgumentCaptor<User> captor =
                 ArgumentCaptor.forClass(User.class);
 
-        verify(userRepository).saveAndFlush(userCaptor.capture());
+        verify(userRepository).saveAndFlush(captor.capture());
 
-        User savedUser = userCaptor.getValue();
+        return captor.getValue();
+    }
 
-        assertEquals(normalizedUsername, savedUser.getUsername());
-        assertEquals(passwordHash, savedUser.getPasswordHash());
-        assertNotEquals(request.password(), savedUser.getPasswordHash());
+    private void verifyRegistrationStoppedBeforePasswordValidation() {
+        verify(passwordVerifyService, never()).verify(anyString());
+        verifyRegistrationStoppedBeforeEncoding();
+    }
 
-        assertEquals(userId, response.id());
-        assertEquals(normalizedUsername, response.username());
+    private void verifyRegistrationStoppedBeforeEncoding() {
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(userRepository, never()).saveAndFlush(any());
+    }
 
+    private void verifyCompleteRegistrationAttempt(
+            RegisterRequest request
+    ) {
+        verify(usernameVerifyService).verify(NORMALIZED_USERNAME);
+        verify(passwordVerifyService).verify(request.password());
+        verify(passwordEncoder).encode(request.password());
+        verify(userRepository).saveAndFlush(any(User.class));
+    }
+
+    private void verifyRegistrationOrder(RegisterRequest request) {
         InOrder inOrder = inOrder(
                 normalizeUsernameService,
                 usernameVerifyService,
@@ -201,7 +256,7 @@ class AuthenticationServiceMockTest {
                 .normalizeUsername(request.username());
 
         inOrder.verify(usernameVerifyService)
-                .verify(normalizedUsername);
+                .verify(NORMALIZED_USERNAME);
 
         inOrder.verify(passwordVerifyService)
                 .verify(request.password());
@@ -211,35 +266,5 @@ class AuthenticationServiceMockTest {
 
         inOrder.verify(userRepository)
                 .saveAndFlush(any(User.class));
-    }
-
-    @Test
-    void register_whenDatabaseUniqueConstraintIsViolated_thenThrowUsernameAlreadyExistsException() {
-        RegisterRequest request =
-                new RegisterRequest(" Hai ", "password123");
-
-        String normalizedUsername = "hai";
-        String passwordHash = "$2a$10$encoded-password";
-
-        when(normalizeUsernameService.normalizeUsername(request.username()))
-                .thenReturn(normalizedUsername);
-
-        when(passwordEncoder.encode(request.password()))
-                .thenReturn(passwordHash);
-
-        when(userRepository.saveAndFlush(any(User.class)))
-                .thenThrow(new DataIntegrityViolationException(
-                        "Duplicate username"
-                ));
-
-        assertThrows(
-                UsernameAlreadyExistsException.class,
-                () -> authenticationService.register(request)
-        );
-
-        verify(usernameVerifyService).verify(normalizedUsername);
-        verify(passwordVerifyService).verify(request.password());
-        verify(passwordEncoder).encode(request.password());
-        verify(userRepository).saveAndFlush(any(User.class));
     }
 }
