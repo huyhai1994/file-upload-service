@@ -1,3 +1,5 @@
+package org.mini_lab.file_upload_service.service.security;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mini_lab.file_upload_service.dto.security.RegisterRequest;
@@ -8,10 +10,6 @@ import org.mini_lab.file_upload_service.exception.security.PasswordTooShortExcep
 import org.mini_lab.file_upload_service.exception.security.UsernameAlreadyExistsException;
 import org.mini_lab.file_upload_service.exception.security.UsernameLengthExceededException;
 import org.mini_lab.file_upload_service.repository.UserRepository;
-import org.mini_lab.file_upload_service.service.security.AuthenticationService;
-import org.mini_lab.file_upload_service.service.security.NormalizeUsernameService;
-import org.mini_lab.file_upload_service.service.security.PasswordVerifyService;
-import org.mini_lab.file_upload_service.service.security.UsernameVerifyService;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
@@ -23,16 +21,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mini_lab.file_upload_service.support.MockPasswordBuilder.PASSWORD_HASH;
+import static org.mini_lab.file_upload_service.support.MockPasswordBuilder.VALID_PASSWORD;
+import static org.mini_lab.file_upload_service.support.MockUserBuilder.DEFAULT_USERNAME;
+import static org.mini_lab.file_upload_service.support.MockUserBuilder.NORMALIZED_USERNAME;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthenticationServiceMockTest {
 
-    private static final String RAW_USERNAME = " Hai ";
-    private static final String NORMALIZED_USERNAME = "hai";
-    private static final String VALID_PASSWORD = "password123";
-    private static final String PASSWORD_HASH = "$2a$10$encoded-password";
 
     @InjectMocks
     private AuthenticationService authenticationService;
@@ -174,11 +172,11 @@ class AuthenticationServiceMockTest {
     }
 
     private RegisterRequest validRequest() {
-        return request(RAW_USERNAME, VALID_PASSWORD);
+        return request(DEFAULT_USERNAME, VALID_PASSWORD);
     }
 
     private RegisterRequest requestWithPassword(String password) {
-        return request(RAW_USERNAME, password);
+        return request(DEFAULT_USERNAME, password);
     }
 
     private RegisterRequest request(String username, String password) {

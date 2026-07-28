@@ -174,7 +174,7 @@ public class ExceptionControllerAdvice {
     ) {
         return buildErrorResponse(
                 HttpStatus.BAD_REQUEST,
-                ErrorCode.USER_COULD_NOT_FOUND
+                ErrorCode.USER_NOT_FOUND
         );
     }
 }

@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.mini_lab.file_upload_service.enums.file_upload.ErrorCode;
 import org.mini_lab.file_upload_service.exception.security.PasswordLengthExceededException;
 import org.mini_lab.file_upload_service.exception.security.PasswordTooShortException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.InputMismatchException;

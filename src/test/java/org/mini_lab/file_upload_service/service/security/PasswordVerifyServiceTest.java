@@ -3,7 +3,6 @@ package org.mini_lab.file_upload_service.service.security;
 import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.exception.security.PasswordLengthExceededException;
 import org.mini_lab.file_upload_service.exception.security.PasswordTooShortException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -11,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class PasswordVerifyServiceTest {
 
     private final PasswordVerifyService passwordVerifyService =
-            new PasswordVerifyService(new BCryptPasswordEncoder());
+            new PasswordVerifyService();
 
     @Test
     void verify_whenPasswordLengthIs7_thenThrowPasswordTooShortException() {
