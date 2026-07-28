@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mini_lab.file_upload_service.support.MockUserBuilder.NORMALIZED_USERNAME;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,8 +38,8 @@ class UsernameVerifyServiceMockTest {
     }
 
     @Test
-    void verify_whenUsernameLengthIs99AndUsernameDoesNotExist_thenDoesNotThrow() {
-        String username = "a".repeat(99);
+    void verify_whenUsernameValidAndUsernameDoesNotExist_thenDoesNotThrow() {
+        String username = NORMALIZED_USERNAME;
 
         when(userRepository.existsByUsername(username)).thenReturn(false);
 
@@ -48,8 +49,8 @@ class UsernameVerifyServiceMockTest {
     }
 
     @Test
-    void verify_wheUsernameLengthIs99AndUsernameIsExist_whenThrowUsernameAlreadyExistsException() {
-        String username = "a".repeat(99);
+    void verify_wheUsernameValidAndUsernameIsExist_whenThrowUsernameAlreadyExistsException() {
+        String username = NORMALIZED_USERNAME;
         when(userRepository.existsByUsername(username)).thenReturn(true);
         assertThrows(UsernameAlreadyExistsException.class, () -> usernameVerifyService.verify(username));
 

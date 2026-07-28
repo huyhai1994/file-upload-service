@@ -10,21 +10,26 @@ import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 
-import java.sql.Time;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mini_lab.file_upload_service.support.MockUserBuilder.DEFAULT_USERNAME;
+import static org.mini_lab.file_upload_service.support.MockUserBuilder.NORMALIZED_USERNAME;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,8 +40,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AuthenticationControllerIntegrationTest
         extends AbstractIntegrationTest {
 
-    private static final String REGISTER_URL =
-            "/api/v1/auth/register";
+    private static final String REGISTER_URL = "/api/v1/auth/register";
+
+    private static final String VALID_PASSWORD = "password123";
+
+    private static final int CONCURRENT_REQUEST_COUNT = 2;
 
     @Autowired
     private UserRepository userRepository;
@@ -49,290 +57,226 @@ class AuthenticationControllerIntegrationTest
 
     private ExecutorService executorService;
 
-    private final int REQUEST_COUNTS = 2;
-
     @BeforeEach
     void setUp() {
         userRepository.deleteAllInBatch();
-        executorService = Executors.newFixedThreadPool(REQUEST_COUNTS);
+
+        executorService = Executors.newFixedThreadPool(
+                CONCURRENT_REQUEST_COUNT
+        );
     }
 
     @AfterEach
     void tearDown() throws InterruptedException {
         executorService.shutdownNow();
-        executorService.awaitTermination(5, TimeUnit.SECONDS);
+
+        boolean terminated = executorService.awaitTermination(
+                5,
+                TimeUnit.SECONDS
+        );
+
+        assertThat(terminated).isTrue();
     }
 
     @Test
     void register_whenRequestBodyValidationFails_thenReturnBadRequest()
             throws Exception {
 
-        String requestBody = """
-                {
-                  "username": "",
-                  "password": ""
-                }
-                """;
+        ResultActions result = performRegister("", "");
 
-        mockMvc.perform(
-                        post(REGISTER_URL)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.data").doesNotExist())
-                .andExpect(jsonPath("$.error.code")
-                        .value(ErrorCode.VALIDATION_ERROR.name()))
-                .andExpect(jsonPath("$.error.message")
-                        .value(ErrorCode.VALIDATION_ERROR.getDefaultMessage()));
+        assertValidationError(
+                result,
+                ErrorCode.VALIDATION_ERROR
+        );
 
-        assertThat(userRepository.count()).isZero();
+        assertNoUserSaved();
     }
 
     @Test
-    void register_whenPasswordValidationFails_thenReturnBadRequest()
+    void register_whenPasswordIsTooShort_thenReturnBadRequest()
             throws Exception {
 
-        String requestBody = """
-                {
-                  "username": "hai",
-                  "password": "1234567"
-                }
-                """;
+        ResultActions result = performRegister(
+                NORMALIZED_USERNAME,
+                "1234567"
+        );
 
-        mockMvc.perform(
-                        post(REGISTER_URL)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.data").doesNotExist())
-                .andExpect(jsonPath("$.error.code")
-                        .value(ErrorCode.PASSWORD_TOO_SHORT.name()))
-                .andExpect(jsonPath("$.error.message")
-                        .value(ErrorCode.PASSWORD_TOO_SHORT.getDefaultMessage()));
+        assertValidationError(
+                result,
+                ErrorCode.PASSWORD_TOO_SHORT
+        );
 
-        assertThat(userRepository.count()).isZero();
-    }
-
-    @Test
-    void register_whenUsernameValidationFails_thenReturnBadRequest()
-            throws Exception {
-
-        String username = "a".repeat(100);
-
-        String requestBody = """
-                {
-                  "username": "%s",
-                  "password": "password123"
-                }
-                """.formatted(username);
-
-        mockMvc.perform(
-                        post(REGISTER_URL)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.data").doesNotExist())
-                .andExpect(jsonPath("$.error.code")
-                        .value(ErrorCode.USERNAME_LENGTH_EXCEEDED.name()))
-                .andExpect(jsonPath("$.error.message")
-                        .value(ErrorCode.USERNAME_LENGTH_EXCEEDED
-                                .getDefaultMessage()));
-
-        assertThat(userRepository.count()).isZero();
-    }
-
-    @Test
-    void register_whenTwoRegisterRequestsAtSameTime_thenOneSucceedsAndOneFails()
-            throws Exception {
-
-        String requestBody = """
-                {
-                  "username": " ConcurrentUser ",
-                  "password": "password123"
-                }
-                """;
-
-        CountDownLatch readyLatch = new CountDownLatch(REQUEST_COUNTS);
-        CountDownLatch startLatch = new CountDownLatch(1);
-        List<CompletableFuture<MvcResult>> futures = new ArrayList<>();
-
-        for (int i = 0; i < REQUEST_COUNTS; i++) {
-            CompletableFuture<MvcResult> future = CompletableFuture.supplyAsync(() -> {
-                readyLatch.countDown();
-
-                try {
-                    startLatch.await();
-                    return performRegister(requestBody);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }, executorService);
-            futures.add(future);
-        }
-
-
-        assertThat(readyLatch.await(5, TimeUnit.SECONDS)).
-                isTrue();
-        startLatch.countDown();
-        CompletableFuture<Void> allRequests = CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
-
-        allRequests.get(10, TimeUnit.SECONDS);
-
-        List<MvcResult> results = futures.stream().map(CompletableFuture::join)
-                .toList();
-
-
-        List<Integer> statuses = results.stream().map(result -> result.getResponse().getStatus()).toList();
-
-
-        assertThat(statuses)
-                .
-
-                containsExactlyInAnyOrder(
-                        HttpStatus.CREATED.value(),
-                        HttpStatus.CONFLICT.value()
-                );
-
-        assertThat(userRepository.count()).
-
-                isEqualTo(1);
-
-        User savedUser = userRepository
-                .findByUsername("concurrentuser")
-                .orElseThrow();
-
-        assertThat(savedUser.getUsername())
-                .
-
-                isEqualTo("concurrentuser");
-
-        assertThat(
-                passwordEncoder.matches(
-                        "password123",
-                        savedUser.getPasswordHash()
-                )
-        ).
-
-                isTrue();
-    }
-
-    @Test
-    void register_whenRegisterSuccess_thenReturnCreated()
-            throws Exception {
-
-        String rawPassword = "password123";
-
-        String requestBody = """
-                {
-                  "username": " Hai ",
-                  "password": "%s"
-                }
-                """.formatted(rawPassword);
-
-        mockMvc.perform(
-                        post(REGISTER_URL)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                )
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.error").doesNotExist())
-                .andExpect(jsonPath("$.data.id").isNotEmpty())
-                .andExpect(jsonPath("$.data.username")
-                        .value("hai"));
-
-        List<User> users = userRepository.findAll();
-
-        assertThat(users).hasSize(1);
-
-        User savedUser = users.get(0);
-
-        assertThat(savedUser.getUsername())
-                .isEqualTo("hai");
-
-        assertThat(savedUser.getPasswordHash())
-                .isNotEqualTo(rawPassword);
-
-        assertThat(
-                passwordEncoder.matches(
-                        rawPassword,
-                        savedUser.getPasswordHash()
-                )
-        ).isTrue();
+        assertNoUserSaved();
     }
 
     @Test
     void register_whenPasswordIsTooLong_thenReturnBadRequest()
             throws Exception {
 
-        String password = "a".repeat(73);
+        ResultActions result = performRegister(
+                NORMALIZED_USERNAME,
+                "a".repeat(73)
+        );
 
-        String requestBody = """
-                {
-                  "username": "hai",
-                  "password": "%s"
-                }
-                """.formatted(password);
+        assertValidationError(
+                result,
+                ErrorCode.PASSWORD_LENGTH_EXCEEDED
+        );
 
-        mockMvc.perform(
-                        post(REGISTER_URL)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.data").doesNotExist())
-                .andExpect(jsonPath("$.error.code")
-                        .value(ErrorCode.PASSWORD_LENGTH_EXCEEDED.name()))
-                .andExpect(jsonPath("$.error.message")
-                        .value(ErrorCode.PASSWORD_LENGTH_EXCEEDED
-                                .getDefaultMessage()));
-
-        assertThat(userRepository.count()).isZero();
+        assertNoUserSaved();
     }
 
     @Test
-    void register_whenUsernameAlreadyExists_thenReturnConflict()
+    void register_whenUsernameIsTooLong_thenReturnBadRequest()
             throws Exception {
 
-        String firstRequest = """
-                {
-                  "username": "Hai",
-                  "password": "password123"
-                }
-                """;
+        ResultActions result = performRegister(
+                "a".repeat(100),
+                VALID_PASSWORD
+        );
 
-        String secondRequest = """
-                {
-                  "username": " hai ",
-                  "password": "anotherPassword123"
-                }
-                """;
+        assertValidationError(
+                result,
+                ErrorCode.USERNAME_LENGTH_EXCEEDED
+        );
 
-        mockMvc.perform(
-                        post(REGISTER_URL)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(firstRequest)
+        assertNoUserSaved();
+    }
+
+    @Test
+    void register_whenRegisterSucceeds_thenReturnCreatedAndPersistUser()
+            throws Exception {
+
+        performRegister(DEFAULT_USERNAME, VALID_PASSWORD)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.error").doesNotExist())
+                .andExpect(jsonPath("$.data.id").isNotEmpty())
+                .andExpect(jsonPath("$.data.username")
+                        .value(NORMALIZED_USERNAME));
+
+        User savedUser = getOnlySavedUser();
+
+        assertThat(savedUser.getUsername())
+                .isEqualTo(NORMALIZED_USERNAME);
+
+        assertThat(savedUser.getPasswordHash())
+                .isNotEqualTo(VALID_PASSWORD);
+
+        assertThat(
+                passwordEncoder.matches(
+                        VALID_PASSWORD,
+                        savedUser.getPasswordHash()
                 )
+        ).isTrue();
+    }
+
+    @Test
+    void register_whenNormalizedUsernameAlreadyExists_thenReturnConflict()
+            throws Exception {
+
+        performRegister(DEFAULT_USERNAME, VALID_PASSWORD)
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(
-                        post(REGISTER_URL)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(secondRequest)
-                )
+        performRegister(
+                DEFAULT_USERNAME,
+                "anotherPassword123"
+        )
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.data").doesNotExist())
                 .andExpect(jsonPath("$.error.code")
-                        .value(ErrorCode.USERNAME_ALREADY_EXISTS.name()));
+                        .value(ErrorCode.USERNAME_ALREADY_EXISTS.name()))
+                .andExpect(jsonPath("$.error.message")
+                        .value(ErrorCode.USERNAME_ALREADY_EXISTS
+                                .getDefaultMessage()));
 
         assertThat(userRepository.count()).isEqualTo(1);
+
+        User savedUser = getOnlySavedUser();
+
+        assertThat(savedUser.getUsername())
+                .isEqualTo(NORMALIZED_USERNAME);
+
+        assertThat(
+                passwordEncoder.matches(
+                        VALID_PASSWORD,
+                        savedUser.getPasswordHash()
+                )
+        ).isTrue();
+    }
+
+    @Test
+    void register_whenTwoRequestsUseSameUsernameConcurrently_thenOneCreatedAndOneConflict()
+            throws Exception {
+
+        String requestBody = createRequestBody(
+                " ConcurrentUser ",
+                VALID_PASSWORD
+        );
+
+        CountDownLatch readyLatch =
+                new CountDownLatch(CONCURRENT_REQUEST_COUNT);
+
+        CountDownLatch startLatch =
+                new CountDownLatch(1);
+
+        List<CompletableFuture<MvcResult>> futures =
+                createConcurrentRegisterRequests(
+                        requestBody,
+                        readyLatch,
+                        startLatch
+                );
+
+        assertThat(
+                readyLatch.await(5, TimeUnit.SECONDS)
+        ).isTrue();
+
+        startLatch.countDown();
+
+        CompletableFuture
+                .allOf(futures.toArray(CompletableFuture[]::new))
+                .get(10, TimeUnit.SECONDS);
+
+        List<Integer> responseStatuses = futures.stream()
+                .map(CompletableFuture::join)
+                .map(MvcResult::getResponse)
+                .map(MockHttpServletResponse::getStatus)
+                .toList();
+
+        assertThat(responseStatuses)
+                .containsExactlyInAnyOrder(
+                        HttpStatus.CREATED.value(),
+                        HttpStatus.CONFLICT.value()
+                );
+
+        assertThat(userRepository.count()).isEqualTo(1);
+
+        User savedUser = userRepository
+                .findByUsername("concurrentuser")
+                .orElseThrow();
+
+        assertThat(savedUser.getUsername())
+                .isEqualTo("concurrentuser");
+
+        assertThat(
+                passwordEncoder.matches(
+                        VALID_PASSWORD,
+                        savedUser.getPasswordHash()
+                )
+        ).isTrue();
+    }
+
+    private ResultActions performRegister(
+            String username,
+            String password
+    ) throws Exception {
+
+        return mockMvc.perform(
+                post(REGISTER_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createRequestBody(username, password))
+        );
     }
 
     private MvcResult performRegister(String requestBody)
@@ -344,5 +288,85 @@ class AuthenticationControllerIntegrationTest
                                 .content(requestBody)
                 )
                 .andReturn();
+    }
+
+    private String createRequestBody(
+            String username,
+            String password
+    ) {
+        return """
+                {
+                  "username": "%s",
+                  "password": "%s"
+                }
+                """.formatted(username, password);
+    }
+
+    private void assertValidationError(
+            ResultActions result,
+            ErrorCode errorCode
+    ) throws Exception {
+
+        result
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.data").doesNotExist())
+                .andExpect(jsonPath("$.error.code")
+                        .value(errorCode.name()))
+                .andExpect(jsonPath("$.error.message")
+                        .value(errorCode.getDefaultMessage()));
+    }
+
+    private void assertNoUserSaved() {
+        assertThat(userRepository.count()).isZero();
+    }
+
+    private User getOnlySavedUser() {
+        List<User> users = userRepository.findAll();
+
+        assertThat(users).hasSize(1);
+
+        return users.get(0);
+    }
+
+    private List<CompletableFuture<MvcResult>>
+    createConcurrentRegisterRequests(
+            String requestBody,
+            CountDownLatch readyLatch,
+            CountDownLatch startLatch
+    ) {
+        return IntStream
+                .range(0, CONCURRENT_REQUEST_COUNT)
+                .mapToObj(index -> CompletableFuture.supplyAsync(
+                        () -> {
+                            readyLatch.countDown();
+
+                            awaitStartSignal(startLatch);
+
+                            try {
+                                return performRegister(requestBody);
+                            } catch (Exception exception) {
+                                throw new IllegalStateException(
+                                        "Register request failed",
+                                        exception
+                                );
+                            }
+                        },
+                        executorService
+                ))
+                .toList();
+    }
+
+    private void awaitStartSignal(CountDownLatch startLatch) {
+        try {
+            startLatch.await();
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+
+            throw new IllegalStateException(
+                    "Concurrent register request was interrupted",
+                    exception
+            );
+        }
     }
 }
