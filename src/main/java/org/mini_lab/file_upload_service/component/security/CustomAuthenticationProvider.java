@@ -2,6 +2,7 @@ package org.mini_lab.file_upload_service.component.security;
 
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
+import org.mini_lab.file_upload_service.enums.file_upload.ErrorCode;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,9 +31,9 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         UserDetails userDetails = customUserDetailsManager.loadUserByUsername(username);
 
         if (passwordEncoder.matches(password, userDetails.getPassword())) {
-            return new UsernamePasswordAuthenticationToken(username, password, userDetails.getAuthorities());
+            return new UsernamePasswordAuthenticationToken(username, null, userDetails.getAuthorities());
         } else {
-            throw new BadCredentialsException("Something went wrong!");
+            throw new BadCredentialsException(ErrorCode.BAD_CREDENTIAL.getDefaultMessage());
         }
     }
 

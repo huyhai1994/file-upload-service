@@ -32,6 +32,8 @@ public enum ErrorCode {
 
     INVALID_REQUEST_BODY("Invalid request body"),
 
+    BAD_CREDENTIAL("Invalid username or password!"),
+
     // Common
     INTERNAL_SERVER_ERROR("Internal server error");
 

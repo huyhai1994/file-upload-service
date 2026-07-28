@@ -54,7 +54,7 @@ class CustomAuthenticationProviderMockTest {
         );
         assertTrue(result.isAuthenticated());
         assertEquals(NORMALIZED_USERNAME, result.getPrincipal());
-        assertEquals(RAW_PASSWORD, result.getCredentials());
+        assertNull(result.getCredentials());
 
         verify(userDetailsService).loadUserByUsername(NORMALIZED_USERNAME);
         verify(passwordEncoder).matches(
