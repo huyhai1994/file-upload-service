@@ -7,6 +7,7 @@ import org.mini_lab.file_upload_service.dto.security.LoginResponse;
 import org.mini_lab.file_upload_service.dto.security.RegisterRequest;
 import org.mini_lab.file_upload_service.dto.security.RegisterResponse;
 import org.mini_lab.file_upload_service.entity.User;
+import org.mini_lab.file_upload_service.enums.file_upload.ErrorCode;
 import org.mini_lab.file_upload_service.exception.security.PasswordLengthExceededException;
 import org.mini_lab.file_upload_service.exception.security.PasswordTooShortException;
 import org.mini_lab.file_upload_service.exception.security.UsernameAlreadyExistsException;
@@ -19,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -26,6 +28,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.UUID;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mini_lab.file_upload_service.support.MockAccessTokenBuilder.ACCESS_TOKEN;
 import static org.mini_lab.file_upload_service.support.MockPasswordBuilder.PASSWORD_HASH;
@@ -211,6 +214,37 @@ class AuthenticationServiceMockTest {
 
     }
 
+    @Test
+    void login_whenBadCredentials_thenThrowBadCredentialsExceptionAndNotGenerateToken() {
+        when(normalizeUsernameService.normalizeUsername(DEFAULT_USERNAME))
+                .thenReturn(NORMALIZED_USERNAME);
+
+        when(authenticationManager.authenticate(
+                any(UsernamePasswordAuthenticationToken.class)
+        )).thenThrow(new BadCredentialsException(
+                ErrorCode.BAD_CREDENTIAL.getDefaultMessage()
+        ));
+
+        LoginRequest loginRequest = validLoginRequest();
+
+        BadCredentialsException exception = assertThrows(
+                BadCredentialsException.class,
+                () -> authenticationService.login(loginRequest)
+        );
+
+        assertEquals(
+                ErrorCode.BAD_CREDENTIAL.getDefaultMessage(),
+                exception.getMessage()
+        );
+
+        verify(normalizeUsernameService)
+                .normalizeUsername(loginRequest.username());
+
+        verify(authenticationManager)
+                .authenticate(any(UsernamePasswordAuthenticationToken.class));
+
+        verifyNoInteractions(jwtService);
+    }
     private RegisterRequest validRegisterRequest() {
         return registerRequest(DEFAULT_USERNAME, VALID_PASSWORD);
     }
@@ -322,8 +356,6 @@ class AuthenticationServiceMockTest {
 
         InOrder inOrder = inOrder(
                 normalizeUsernameService,
-                usernameVerifyService,
-                passwordVerifyService,
                 authenticationManager,
                 authentication,
                 jwtService
@@ -331,12 +363,6 @@ class AuthenticationServiceMockTest {
 
         inOrder.verify(normalizeUsernameService)
                 .normalizeUsername(request.username());
-
-        inOrder.verify(usernameVerifyService)
-                .verify(NORMALIZED_USERNAME);
-
-        inOrder.verify(passwordVerifyService)
-                .verify(request.password());
 
         inOrder.verify(authenticationManager)
                 .authenticate(tokenCaptor.capture());
@@ -351,7 +377,7 @@ class AuthenticationServiceMockTest {
                 tokenCaptor.getValue();
 
         assertEquals(
-                DEFAULT_USERNAME,
+                NORMALIZED_USERNAME,
                 capturedToken.getPrincipal()
         );
 
@@ -361,4 +387,5 @@ class AuthenticationServiceMockTest {
         );
 
         assertFalse(capturedToken.isAuthenticated());
-    }}
+    }
+}

@@ -26,7 +26,7 @@ public class JwtService {
     private static final String AUTHORITIES_CLAIM = "authorities";
 
     private final JwtProperties jwtProperties;
-    private final Clock clock = Clock.systemUTC();
+    private final Clock clock;
 
     @WithSpan("jwtservice-generate-access-token")
     public String generateAccessToken(UserDetails userDetails) {

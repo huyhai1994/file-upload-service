@@ -60,13 +60,10 @@ public class AuthenticationService {
     public LoginResponse login(LoginRequest request) {
         String normalizedUsername = normalizeUsernameService.normalizeUsername(request.username());
 
-        usernameVerifyService.verify(normalizedUsername);
-        passwordVerifyService.verify(request.password());
-
         Authentication authentication =
                 authenticationManager.authenticate(
                         UsernamePasswordAuthenticationToken.unauthenticated(
-                                request.username(),
+                                normalizedUsername,
                                 request.password()
                         )
                 );
