@@ -12,6 +12,7 @@ import org.mini_lab.file_upload_service.exception.security.UsernameLengthExceede
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaSystemException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -173,8 +174,18 @@ public class ExceptionControllerAdvice {
             UsernameNotFoundException exception
     ) {
         return buildErrorResponse(
-                HttpStatus.BAD_REQUEST,
-                ErrorCode.USER_NOT_FOUND
+                HttpStatus.UNAUTHORIZED,
+                ErrorCode.INVALID_CREDENTIALS
+        );
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBadCredentials(
+            BadCredentialsException exception
+    ) {
+        return buildErrorResponse(
+                HttpStatus.UNAUTHORIZED,
+                ErrorCode.INVALID_CREDENTIALS
         );
     }
 }

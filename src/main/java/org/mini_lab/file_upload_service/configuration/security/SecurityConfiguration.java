@@ -1,10 +1,12 @@
 package org.mini_lab.file_upload_service.configuration.security;
 
-import org.mini_lab.file_upload_service.component.security.CustomAuthenticationProvider;
+import org.mini_lab.file_upload_service.service.security.CustomUserDetailsManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -20,20 +22,28 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(CustomAuthenticationProvider customAuthenticationProvider) {
-        return new ProviderManager(customAuthenticationProvider);
+    public AuthenticationManager authenticationManager(AuthenticationProvider daoAuthenticationProvider) {
+        return new ProviderManager(daoAuthenticationProvider);
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity,
-                                                   CustomAuthenticationProvider customAuthenticationProvider
+    public AuthenticationProvider daoAuthenticationProvider(CustomUserDetailsManager customUserDetailsManager, PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider provider =
+                new DaoAuthenticationProvider(customUserDetailsManager);
+
+        provider.setPasswordEncoder(passwordEncoder);
+
+        return provider;
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity
     ) {
         httpSecurity
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers("/api/v1/auth/register")
                         .ignoringRequestMatchers("/api/v1/auth/login")
                 )
-                .authenticationProvider(customAuthenticationProvider)
                 .httpBasic(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/register").permitAll()
