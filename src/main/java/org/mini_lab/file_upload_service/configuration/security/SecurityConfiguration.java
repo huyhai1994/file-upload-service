@@ -12,7 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-public class SercurityConfiguration {
+public class SecurityConfiguration {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
