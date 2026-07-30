@@ -22,6 +22,7 @@ public enum ErrorCode {
     USERNAME_LENGTH_EXCEEDED("Username must not exceed 100 characters"),
     USERNAME_COULD_NOT_BE_NULL("Username couldn't be null"),
     USER_NOT_FOUND("User couldn't found"),
+    INVALID_CREDENTIALS("Invalid username or password"),
 
     PASSWORD_TOO_SHORT("Password must contain at least 8 characters"),
     PASSWORD_LENGTH_EXCEEDED("Password must not exceed 72 characters"),

@@ -5,8 +5,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.time.ZoneOffset;
+
+import static org.mini_lab.file_upload_service.support.MockTimeBuilder.NOW;
 
 @TestConfiguration
 public class TestClockConfiguration {
@@ -15,7 +16,7 @@ public class TestClockConfiguration {
     @Primary
     public Clock clock() {
         return Clock.fixed(
-                Instant.parse("2026-07-08T10:00:00Z"),
+                NOW,
                 ZoneOffset.UTC
         );
     }

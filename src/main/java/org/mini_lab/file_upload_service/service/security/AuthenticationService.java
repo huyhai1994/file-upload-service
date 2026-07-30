@@ -1,13 +1,20 @@
 package org.mini_lab.file_upload_service.service.security;
 
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.mini_lab.file_upload_service.dto.security.LoginRequest;
+import org.mini_lab.file_upload_service.dto.security.LoginResponse;
 import org.mini_lab.file_upload_service.dto.security.RegisterRequest;
 import org.mini_lab.file_upload_service.dto.security.RegisterResponse;
 import org.mini_lab.file_upload_service.entity.User;
 import org.mini_lab.file_upload_service.exception.security.UsernameAlreadyExistsException;
 import org.mini_lab.file_upload_service.repository.UserRepository;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +27,8 @@ public class AuthenticationService {
     private final NormalizeUsernameService normalizeUsernameService;
     private final UsernameVerifyService usernameVerifyService;
     private final PasswordVerifyService passwordVerifyService;
-
+    private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
 
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
@@ -46,5 +54,24 @@ public class AuthenticationService {
         } catch (DataIntegrityViolationException exception) {
             throw new UsernameAlreadyExistsException(normalizedUsername);
         }
+    }
+
+    @WithSpan("authenticationservice-login")
+    public LoginResponse login(LoginRequest request) {
+        String normalizedUsername = normalizeUsernameService.normalizeUsername(request.username());
+
+        Authentication authentication =
+                authenticationManager.authenticate(
+                        UsernamePasswordAuthenticationToken.unauthenticated(
+                                normalizedUsername,
+                                request.password()
+                        )
+                );
+
+        UserDetails principal = (UserDetails) authentication.getPrincipal();
+        String accessToken = jwtService.generateAccessToken(principal);
+
+        return new LoginResponse(accessToken);
+
     }
 }

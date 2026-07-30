@@ -2,9 +2,12 @@ package org.mini_lab.file_upload_service.service.security;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mini_lab.file_upload_service.dto.security.LoginRequest;
+import org.mini_lab.file_upload_service.dto.security.LoginResponse;
 import org.mini_lab.file_upload_service.dto.security.RegisterRequest;
 import org.mini_lab.file_upload_service.dto.security.RegisterResponse;
 import org.mini_lab.file_upload_service.entity.User;
+import org.mini_lab.file_upload_service.enums.file_upload.ErrorCode;
 import org.mini_lab.file_upload_service.exception.security.PasswordLengthExceededException;
 import org.mini_lab.file_upload_service.exception.security.PasswordTooShortException;
 import org.mini_lab.file_upload_service.exception.security.UsernameAlreadyExistsException;
@@ -16,11 +19,18 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.UUID;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mini_lab.file_upload_service.support.MockAccessTokenBuilder.ACCESS_TOKEN;
 import static org.mini_lab.file_upload_service.support.MockPasswordBuilder.PASSWORD_HASH;
 import static org.mini_lab.file_upload_service.support.MockPasswordBuilder.VALID_PASSWORD;
 import static org.mini_lab.file_upload_service.support.MockUserBuilder.DEFAULT_USERNAME;
@@ -50,12 +60,25 @@ class AuthenticationServiceMockTest {
     @Mock
     private PasswordVerifyService passwordVerifyService;
 
+    @Mock
+    private AuthenticationManager authenticationManager;
+
+    @Mock
+    private Authentication authentication;
+
+    @Mock
+    private JwtService jwtService;
+
+
+    @Mock
+    private UserDetails userDetails;
+
     @Test
     void register_whenUsernameTooLong_thenThrowExceptionAndNotSave() {
         String rawUsername = "A".repeat(100);
         String normalizedUsername = "a".repeat(100);
 
-        RegisterRequest request = request(rawUsername, VALID_PASSWORD);
+        RegisterRequest request = registerRequest(rawUsername, VALID_PASSWORD);
 
         mockNormalizedUsername(request, normalizedUsername);
 
@@ -74,7 +97,7 @@ class AuthenticationServiceMockTest {
     @Test
     void register_whenPasswordTooShort_thenThrowExceptionAndNotSave() {
         String password = "1234567";
-        RegisterRequest request = requestWithPassword(password);
+        RegisterRequest request = registerRequestWithPassword(password);
 
         mockNormalizedUsername(request);
 
@@ -94,7 +117,7 @@ class AuthenticationServiceMockTest {
     @Test
     void register_whenPasswordTooLong_thenThrowExceptionAndNotSave() {
         String password = "a".repeat(73);
-        RegisterRequest request = requestWithPassword(password);
+        RegisterRequest request = registerRequestWithPassword(password);
 
         mockNormalizedUsername(request);
 
@@ -113,7 +136,7 @@ class AuthenticationServiceMockTest {
 
     @Test
     void register_whenUserExists_thenThrowExceptionAndNotSave() {
-        RegisterRequest request = validRequest();
+        RegisterRequest request = validRegisterRequest();
 
         mockNormalizedUsername(request);
 
@@ -131,7 +154,7 @@ class AuthenticationServiceMockTest {
 
     @Test
     void register_whenRequestIsValid_thenEncodePasswordAndSaveUser() {
-        RegisterRequest request = validRequest();
+        RegisterRequest request = validRegisterRequest();
         UUID userId = UUID.randomUUID();
 
         mockSuccessfulRegistration(request, userId);
@@ -153,7 +176,7 @@ class AuthenticationServiceMockTest {
 
     @Test
     void register_whenDatabaseUniqueConstraintIsViolated_thenThrowUsernameAlreadyExistsException() {
-        RegisterRequest request = validRequest();
+        RegisterRequest request = validRegisterRequest();
 
         mockNormalizedUsername(request);
         mockPasswordEncoding(request);
@@ -171,16 +194,75 @@ class AuthenticationServiceMockTest {
         verifyCompleteRegistrationAttempt(request);
     }
 
-    private RegisterRequest validRequest() {
-        return request(DEFAULT_USERNAME, VALID_PASSWORD);
+    @Test
+    void login_whenLoginRequestValid_thenAuthenticateAndReturnLoginResponse() {
+        when(normalizeUsernameService.normalizeUsername(DEFAULT_USERNAME)).thenReturn(NORMALIZED_USERNAME);
+
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
+        when(jwtService.generateAccessToken(any(UserDetails.class))).thenReturn(ACCESS_TOKEN);
+
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+
+        LoginRequest loginRequest = validLoginRequest();
+
+        LoginResponse loginResponse = authenticationService.login(loginRequest);
+
+        assertNotNull(loginResponse);
+        assertEquals(ACCESS_TOKEN, loginResponse.accessToken());
+
+        verifyLoginOrder(loginRequest);
+
     }
 
-    private RegisterRequest requestWithPassword(String password) {
-        return request(DEFAULT_USERNAME, password);
+    @Test
+    void login_whenBadCredentials_thenThrowBadCredentialsExceptionAndNotGenerateToken() {
+        when(normalizeUsernameService.normalizeUsername(DEFAULT_USERNAME))
+                .thenReturn(NORMALIZED_USERNAME);
+
+        when(authenticationManager.authenticate(
+                any(UsernamePasswordAuthenticationToken.class)
+        )).thenThrow(new BadCredentialsException(
+                ErrorCode.BAD_CREDENTIAL.getDefaultMessage()
+        ));
+
+        LoginRequest loginRequest = validLoginRequest();
+
+        BadCredentialsException exception = assertThrows(
+                BadCredentialsException.class,
+                () -> authenticationService.login(loginRequest)
+        );
+
+        assertEquals(
+                ErrorCode.BAD_CREDENTIAL.getDefaultMessage(),
+                exception.getMessage()
+        );
+
+        verify(normalizeUsernameService)
+                .normalizeUsername(loginRequest.username());
+
+        verify(authenticationManager)
+                .authenticate(any(UsernamePasswordAuthenticationToken.class));
+
+        verifyNoInteractions(jwtService);
+    }
+    private RegisterRequest validRegisterRequest() {
+        return registerRequest(DEFAULT_USERNAME, VALID_PASSWORD);
     }
 
-    private RegisterRequest request(String username, String password) {
+    private LoginRequest validLoginRequest() {
+        return loginRequest(DEFAULT_USERNAME, VALID_PASSWORD);
+    }
+
+    private RegisterRequest registerRequestWithPassword(String password) {
+        return registerRequest(DEFAULT_USERNAME, password);
+    }
+
+    private RegisterRequest registerRequest(String username, String password) {
         return new RegisterRequest(username, password);
+    }
+
+    private LoginRequest loginRequest(String username, String password) {
+        return new LoginRequest(username, password);
     }
 
     private void mockNormalizedUsername(RegisterRequest request) {
@@ -266,5 +348,44 @@ class AuthenticationServiceMockTest {
 
         inOrder.verify(userRepository)
                 .saveAndFlush(any(User.class));
+    }
+
+    private void verifyLoginOrder(LoginRequest request) {
+        ArgumentCaptor<UsernamePasswordAuthenticationToken> tokenCaptor =
+                ArgumentCaptor.forClass(UsernamePasswordAuthenticationToken.class);
+
+        InOrder inOrder = inOrder(
+                normalizeUsernameService,
+                authenticationManager,
+                authentication,
+                jwtService
+        );
+
+        inOrder.verify(normalizeUsernameService)
+                .normalizeUsername(request.username());
+
+        inOrder.verify(authenticationManager)
+                .authenticate(tokenCaptor.capture());
+
+        inOrder.verify(authentication)
+                .getPrincipal();
+
+        inOrder.verify(jwtService)
+                .generateAccessToken(userDetails);
+
+        UsernamePasswordAuthenticationToken capturedToken =
+                tokenCaptor.getValue();
+
+        assertEquals(
+                NORMALIZED_USERNAME,
+                capturedToken.getPrincipal()
+        );
+
+        assertEquals(
+                request.password(),
+                capturedToken.getCredentials()
+        );
+
+        assertFalse(capturedToken.isAuthenticated());
     }
 }

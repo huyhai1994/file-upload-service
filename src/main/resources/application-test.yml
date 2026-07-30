@@ -1,3 +1,5 @@
+server:
+  port: 29999
 spring:
   application:
     name: file_upload_service_test
@@ -23,6 +25,8 @@ logging:
               BasicBinder: TRACE
         orm:
           results: TRACE
+      springframework:
+        security: DEBUG
 minio:
   endpoint: http://localhost:9000
   access-key: minio
@@ -49,3 +53,8 @@ file:
     deleting-timeout: 10m
     scheduler-interval: 1m
     batch-size: 10
+security:
+  jwt:
+    secret-key: GpP5Ko/lSAodfqg3B/TJpcijh06eST3P2M0pn6ZTIYY=
+    access-token-expiration: 15m
+    issuer: file-upload-service
