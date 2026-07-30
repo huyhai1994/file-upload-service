@@ -1,0 +1,85 @@
+package org.mini_lab.file_upload_service.service.security;
+
+import io.jsonwebtoken.Claims;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mini_lab.file_upload_service.configuration.security.JwtProperties;
+import org.mini_lab.file_upload_service.support.MockUserBuilder;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.time.Clock;
+import java.time.Duration;
+import java.util.List;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mini_lab.file_upload_service.support.MockTimeBuilder.NOW;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class JwtServiceMockTest {
+
+    private static final Duration ACCESS_TOKEN_EXPIRATION =
+            Duration.ofMinutes(15);
+
+    private static final String SECRET_KEY =
+            "GpP5Ko/lSAodfqg3B/TJpcijh06eST3P2M0pn6ZTIYY=";
+
+    private static final String ISSUER = "test-service";
+
+    @Mock
+    JwtProperties jwtProperties;
+
+    @Mock
+    Clock clock;
+
+    @Mock
+    UserDetails userDetails;
+
+    @InjectMocks
+    JwtService jwtService;
+
+    @Test
+    void generateAccessToken_whenUserDetailsValid_thenReturnAccessTokenWithExpectedClaims() {
+        when(clock.instant()).thenReturn(NOW);
+        when(jwtProperties.accessTokenExpiration())
+                .thenReturn(ACCESS_TOKEN_EXPIRATION);
+        when(jwtProperties.secretKey()).thenReturn(SECRET_KEY);
+        when(jwtProperties.issuer()).thenReturn(ISSUER);
+
+        when(userDetails.getUsername())
+                .thenReturn(MockUserBuilder.NORMALIZED_USERNAME);
+        when(userDetails.getAuthorities()).thenReturn(List.of());
+
+        String accessToken = jwtService.generateAccessToken(userDetails);
+
+        assertThat(accessToken)
+                .isNotNull()
+                .isNotBlank();
+
+        Claims claims = jwtService.extractClaims(accessToken);
+
+        assertThat(claims.getSubject())
+                .isEqualTo(MockUserBuilder.NORMALIZED_USERNAME);
+
+        assertThat(claims.getIssuer())
+                .isEqualTo(ISSUER);
+
+        assertThat(claims.getIssuedAt().toInstant())
+                .isEqualTo(NOW);
+
+        assertThat(claims.getExpiration().toInstant())
+                .isEqualTo(NOW.plus(ACCESS_TOKEN_EXPIRATION));
+    }
+
+    @Test
+    void generateAccessToken_whenUserDetailsNull_thenThrowNullPointerException() {
+        assertThrows(
+                NullPointerException.class,
+                () -> jwtService.generateAccessToken(null)
+        );
+    }
+}

@@ -14,10 +14,7 @@ import javax.crypto.SecretKey;
 import java.security.Key;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +27,8 @@ public class JwtService {
 
     @WithSpan("jwtservice-generate-access-token")
     public String generateAccessToken(UserDetails userDetails) {
+        Objects.requireNonNull(userDetails);
+
         Instant issuedAt = clock.instant();
         Instant expiresAt =
                 issuedAt.plus(jwtProperties.accessTokenExpiration());
