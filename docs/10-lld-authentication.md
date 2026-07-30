@@ -514,114 +514,23 @@ User --> UserStatus
 POST /api/v1/auth/register
 ```
 
-#### 8.1.3 Class Diagram
+#### 8.1.3 Error Handling
+| Case                            | Message                                 |    HTTP | Exception                         | Error Code                 |
+| ------------------------------- | --------------------------------------- | ------: | --------------------------------- | -------------------------- |
+| Username already exists         | Username already exists                 | **409** | `UsernameAlreadyExistsException`  | `USERNAME_ALREADY_EXISTS`  |
+| Username exceeds maximum length | Username must not exceed 100 characters | **400** | `UsernameLengthExceededException` | `USERNAME_LENGTH_EXCEEDED` |
+| Invalid username format         | Username contains invalid characters    | **400** | `MethodArgumentNotValidException` | `VALIDATION_ERROR`         |
+| Invalid request body            | Request validation failed               | **400** | `MethodArgumentNotValidException` | `VALIDATION_ERROR`         |
+| Internal server error           | Internal server error                   | **500** | `Exception`                       | `INTERNAL_SERVER_ERROR`    |
+
+
+#### 8.1.4 Class Diagram
 ```plantuml
-@startuml  
-  
-title Authentication Module (Phase 1)  
-  
-left to right direction  
-skinparam classAttributeIconSize 0  
-  
-package "API" {  
-  
-class AuthController {  
-    +login()  
-    +register()  
-}  
-  
-}  
-  
-package "Application" {  
-  
-class AuthenticationService {  
-    +login()  
-    +register()  
-}  
-  
-class PasswordService {  
-    +encode()  
-    +matches()  
-}  
-  
-class JwtTokenProvider {  
-    +generateToken()  
-    +validateToken()  
-    +getUsername()  
-}  
-  
-class LoginAttemptService {  
-    +recordFailure()  
-    +resetFailure()  
-    +checkLocked()  
-}  
-  
-}  
-  
-package "Spring Security" {  
-  
-interface AuthenticationManager  
-  
-interface AuthenticationProvider  
-  
-interface UserDetailsService  
-  
-interface PasswordEncoder  
-  
-class DaoAuthenticationProvider  
-  
-class JwtAuthenticationFilter  
-  
-class UsernamePasswordAuthenticationToken  
-  
-class SecurityContextHolder  
-  
-interface Authentication  
-  
-}  
-  
-package "Persistence" {  
-  
-interface UserRepository  
-  
-class User  
-  
-}  
-  
-'=====================  
-' Login  
-'=====================  
-  
-AuthController --> AuthenticationService  
-  
-AuthenticationService --> AuthenticationManager  
-AuthenticationService --> JwtTokenProvider  
-AuthenticationService --> LoginAttemptService  
-  
-AuthenticationManager --> AuthenticationProvider  
-DaoAuthenticationProvider ..|> AuthenticationProvider  
-  
-AuthenticationProvider --> UserDetailsService  
-AuthenticationProvider --> PasswordEncoder  
-  
-UserDetailsService --> UserRepository  
-UserRepository --> User  
-  
-PasswordService --> PasswordEncoder  
-  
-'=====================  
-' JWT Authentication  
-'=====================  
-  
-JwtAuthenticationFilter --> JwtTokenProvider  
-JwtAuthenticationFilter --> UsernamePasswordAuthenticationToken  
-UsernamePasswordAuthenticationToken ..|> Authentication  
-JwtAuthenticationFilter --> SecurityContextHolder  
   
 @enduml
 ```
 
-#### 8.1.4 Sequence Flow
+#### 8.1.5 Sequence Flow
 
 ```plantuml
 @startuml  
@@ -720,7 +629,7 @@ deactivate ac
 @enduml
 ```
 
-#### 8.1.5 Validation Rules
+#### 8.1.6 Validation Rules
 
 - Username không null hoặc blank.
 - Username dài từ 4 đến 50 ký tự.
@@ -728,7 +637,7 @@ deactivate ac
 - Password đáp ứng password policy.
 - Username chưa tồn tại.
 
-#### 8.1.6 Transaction Boundary
+#### 8.1.7 Transaction Boundary
 
 ```text
 BEGIN
@@ -736,7 +645,7 @@ BEGIN
 COMMIT
 ```
 
-#### 8.1.7 Concurrency
+#### 8.1.8 Concurrency
 
 Hai request đăng ký cùng username có thể cùng vượt qua `existsByUsername()`.
 
@@ -768,31 +677,82 @@ POST /api/v1/auth/login
 
 #### 8.2.3 Sequence Flow
 
-```text
-Client
-  |
-LoginRateLimitFilter
-  |
-AuthController
-  |
-AuthenticationService
-  |
-Load user
-  |
-Check disabled / deleted / locked
-  |
-AuthenticationManager.authenticate()
-  |
-DaoAuthenticationProvider
-  |
-UserDetailsService + PasswordEncoder
-  |
-Success?
-  ├── Yes -> reset failures -> generate JWT -> return token
-  └── No  -> increment failures -> possibly lock -> return 401
+```plantuml
+```plantuml  
+@startuml  
+'https://plantuml.com/sequence-diagram  
+  
+autonumber  
+  
+actor User  
+  
+participant ExceptionControllerAdvice as ECA  
+participant AuthenticationController as AC  
+participant AuthenticationService as AS  
+participant JwtService as JS  
+participant AuthenticationManager as AM  
+participant DaoAuthenticationProvider as DAP  
+participant PasswordEncoder as PE  
+participant CustomUserDetailsManager as CUDM  
+participant UserRepository as UR  
+database MySQL  
+  
+User -> AC: POST /api/v1/auth/login  
+AC -> AS: login(loginRequest)  
+AS -> AM: authenticate(authenticationToken)  
+AM -> DAP: authenticate(authenticationToken)  
+  
+== Load user ==  
+  
+DAP -> CUDM: loadUserByUsername(username)  
+CUDM -> UR: findByUsername(username)  
+UR -> MySQL: SELECT user  
+MySQL --> UR: user record / empty  
+UR --> CUDM: user / empty  
+  
+alt User not found  
+    CUDM -> CUDM: throw UsernameNotFoundException  
+    CUDM --> ECA: propagate exception  
+    ECA --> User: 401 Unauthorized  
+  
+else User found  
+    CUDM --> DAP: UserDetails  
+  
+    == Compare password ==  
+  
+    DAP -> PE: matches(rawPassword, encodedPassword)  
+    PE --> DAP: matched / not matched  
+  
+    alt Password does not match  
+        DAP -> DAP: throw BadCredentialsException  
+        DAP --> ECA: propagate exception  
+        ECA --> User: 401 Unauthorized  
+  
+    else Password matches  
+        DAP --> AM: authenticated Authentication  
+        AM --> AS: Authentication  
+  
+        AS -> JS: generateAccessToken(principal)  
+        JS --> AS: access token  
+  
+        AS --> AC: LoginResponse  
+        AC --> User: 200 OK  
+    end  
+end  
+  
+@enduml  
 ```
 
-#### 8.2.4 Transaction Boundary
+#### 8.2.4 Error Handling
+| Case                         | Message                                    | HTTP Status | Exception                   | Error Code            |
+| ---------------------------- | ------------------------------------------ | ----------: | --------------------------- | --------------------- |
+| Login request limit exceeded | Too many requests. Please try again later. |         429 | `TooManyRequestsException`  | `TOO_MANY_REQUESTS`   |
+| Wrong username or password   | Invalid username or password               |         401 | `BadCredentialsException`   | `INVALID_CREDENTIALS` |
+| User not found               | Invalid username or password               |         401 | `UsernameNotFoundException` | `INVALID_CREDENTIALS` |
+| Account temporarily locked   | Invalid username or password               |         401 | `LockedException`           | `INVALID_CREDENTIALS` |
+| Account disabled             | Invalid username or password               |         401 | `DisabledException`         | `INVALID_CREDENTIALS` |
+| Account deleted              | Invalid username or password               |         401 | `AccountDeletedException`   | `INVALID_CREDENTIALS` |
+#### 8.2.5 Transaction Boundary
 
 Login không cần một transaction bao quanh toàn bộ authentication flow.
 
@@ -808,7 +768,7 @@ Login failure:
 - Set lockedUntil when threshold reached
 ```
 
-#### 8.2.5 Concurrency
+#### 8.2.4 Concurrency
 
 Hai login failure đồng thời có thể gây lost update:
 
@@ -990,40 +950,40 @@ WHERE id = :userId;
 
 ## 12 Failure Matrix
 
-| Step | Failure | Persistent state | Result known? | Retry safe? | Recovery |
-|---|---|---|---:|---:|---|
-| Register | Username duplicate | Existing user unchanged | Yes | No với cùng username | Return 409 |
-| Register | Password validation fails | No change | Yes | Sau khi sửa input | Return 400 |
-| Register | DB unavailable | No commit | Usually yes | Yes | Client retry |
-| Login | Unknown username | No account state changed | Yes | Yes | Return generic 401 |
-| Login | Wrong password | Failure count increased | Yes | Yes | User retries |
-| Login | Fifth wrong password | Account temporarily locked | Yes | Không cho đến khi unlock | Wait 1 hour |
-| Login | Account disabled | No token created | Yes | No | Admin enables account |
-| Login | Account locked | No token created | Yes | No until timeout | Wait |
-| Login | Rate limit exceeded | In-memory counter changed | Yes | Later | Return 429 |
-| JWT generation | Signing failure | Login failure state already reset có thể xảy ra | Yes | Yes | Return 500, user login lại |
-| JWT validation | Missing token | No DB change | Yes | Sau khi cung cấp token | Return 401 |
-| JWT validation | Expired token | No DB change | Yes | No | Login again |
-| JWT validation | Invalid signature | No DB change | Yes | No | Login again |
-| JWT validation | Malformed token | No DB change | Yes | No | Login again |
+| Step           | Failure                   | Persistent state                                | Result known? |              Retry safe? | Recovery                   |
+| -------------- | ------------------------- | ----------------------------------------------- | ------------: | -----------------------: | -------------------------- |
+| Register       | Username duplicate        | Existing user unchanged                         |           Yes |     No với cùng username | Return 409                 |
+| Register       | Password validation fails | No change                                       |           Yes |        Sau khi sửa input | Return 400                 |
+| Register       | DB unavailable            | No commit                                       |   Usually yes |                      Yes | Client retry               |
+| Login          | Unknown username          | No account state changed                        |           Yes |                      Yes | Return generic 401         |
+| Login          | Wrong password            | Failure count increased                         |           Yes |                      Yes | User retries               |
+| Login          | Fifth wrong password      | Account temporarily locked                      |           Yes | Không cho đến khi unlock | Wait 1 hour                |
+| Login          | Account disabled          | No token created                                |           Yes |                       No | Admin enables account      |
+| Login          | Account locked            | No token created                                |           Yes |         No until timeout | Wait                       |
+| Login          | Rate limit exceeded       | In-memory counter changed                       |           Yes |                    Later | Return 429                 |
+| JWT generation | Signing failure           | Login failure state already reset có thể xảy ra |           Yes |                      Yes | Return 500, user login lại |
+| JWT validation | Missing token             | No DB change                                    |           Yes |   Sau khi cung cấp token | Return 401                 |
+| JWT validation | Expired token             | No DB change                                    |           Yes |                       No | Login again                |
+| JWT validation | Invalid signature         | No DB change                                    |           Yes |                       No | Login again                |
+| JWT validation | Malformed token           | No DB change                                    |           Yes |                       No | Login again                |
 
 ---
 
 ## 13 Error Handling
 
-| Condition | HTTP Status | Error Code |
-|---|---:|---|
-| Invalid request | 400 | `VALIDATION_ERROR` |
-| Invalid username or password | 401 | `INVALID_CREDENTIALS` |
-| Missing access token | 401 | `AUTHENTICATION_REQUIRED` |
-| Invalid access token | 401 | `INVALID_ACCESS_TOKEN` |
-| Expired access token | 401 | `ACCESS_TOKEN_EXPIRED` |
-| Account disabled | 403 | `ACCOUNT_DISABLED` |
-| Account deleted | 403 | `ACCOUNT_DELETED` |
-| Account temporarily locked | 423 | `ACCOUNT_TEMPORARILY_LOCKED` |
-| Username already exists | 409 | `USERNAME_ALREADY_EXISTS` |
-| Login rate limit exceeded | 429 | `LOGIN_RATE_LIMIT_EXCEEDED` |
-| Unexpected server failure | 500 | `INTERNAL_SERVER_ERROR` |
+| Condition                    | HTTP Status | Error Code                   |
+| ---------------------------- | ----------: | ---------------------------- |
+| Invalid request              |         400 | `VALIDATION_ERROR`           |
+| Invalid username or password |         401 | `INVALID_CREDENTIALS`        |
+| Missing access token         |         401 | `AUTHENTICATION_REQUIRED`    |
+| Invalid access token         |         401 | `INVALID_ACCESS_TOKEN`       |
+| Expired access token         |         401 | `ACCESS_TOKEN_EXPIRED`       |
+| Account disabled             |         403 | `ACCOUNT_DISABLED`           |
+| Account deleted              |         403 | `ACCOUNT_DELETED`            |
+| Account temporarily locked   |         423 | `ACCOUNT_TEMPORARILY_LOCKED` |
+| Username already exists      |         409 | `USERNAME_ALREADY_EXISTS`    |
+| Login rate limit exceeded    |         429 | `LOGIN_RATE_LIMIT_EXCEEDED`  |
+| Unexpected server failure    |         500 | `INTERNAL_SERVER_ERROR`      |
 
 Không phân biệt response giữa:
 
