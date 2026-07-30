@@ -42,6 +42,8 @@ class AuthenticationControllerIntegrationTest
 
     private static final String REGISTER_URL = "/api/v1/auth/register";
 
+    private static final String LOGIN_URL = "/api/v1/auth/login";
+
     private static final String VALID_PASSWORD = "password123";
 
     private static final int CONCURRENT_REQUEST_COUNT = 2;
@@ -141,6 +143,42 @@ class AuthenticationControllerIntegrationTest
         );
 
         assertNoUserSaved();
+    }
+
+    @Test
+    void login_whenLoginSucceeds_thenReturnAccessToken() throws Exception {
+        persistAnValidUser();
+        performLogin(DEFAULT_USERNAME, VALID_PASSWORD)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.error").doesNotExist())
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty());
+    }
+
+    @Test
+    void login_whenUsernameNotFound_thenThrowBadCredentails() throws Exception {
+        performLogin(DEFAULT_USERNAME, VALID_PASSWORD)
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value(ErrorCode.INVALID_CREDENTIALS.name()))
+                .andExpect(jsonPath("$.error.message").value(ErrorCode.INVALID_CREDENTIALS.getDefaultMessage()))
+                .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
+    void login_whenPasswordNotValid_thenThrowBadCredentails() throws Exception {
+        persistAnValidUser();
+        performLogin(DEFAULT_USERNAME, "not-valid-password")
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value(ErrorCode.INVALID_CREDENTIALS.name()))
+                .andExpect(jsonPath("$.error.message").value(ErrorCode.INVALID_CREDENTIALS.getDefaultMessage()))
+                .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    private void persistAnValidUser() {
+        User user = new User(NORMALIZED_USERNAME, passwordEncoder.encode(VALID_PASSWORD));
+        userRepository.saveAndFlush(user);
     }
 
     @Test
@@ -277,6 +315,27 @@ class AuthenticationControllerIntegrationTest
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createRequestBody(username, password))
         );
+    }
+
+    private ResultActions performLogin(
+            String username,
+            String password
+    ) throws Exception {
+
+        return mockMvc.perform(
+                post(LOGIN_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createRequestBody(username, password))
+        );
+    }
+
+    private MvcResult performLogin(String requestBody) throws Exception {
+        return mockMvc.perform(
+                        post(LOGIN_URL)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestBody)
+                )
+                .andReturn();
     }
 
     private MvcResult performRegister(String requestBody)
