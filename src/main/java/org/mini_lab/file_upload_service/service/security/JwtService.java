@@ -73,6 +73,7 @@ public class JwtService {
         return Jwts.parser()
                 .verifyWith((SecretKey) getSigningKey())
                 .requireIssuer(jwtProperties.issuer())
+                .clock(() -> Date.from(clock.instant()))
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
