@@ -1,6 +1,6 @@
 package org.mini_lab.file_upload_service.file_upload.component;
 
-import org.mini_lab.file_upload_service.file_upload.dto.file_upload.FileUploadCommand;
+import org.mini_lab.file_upload_service.file_upload.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.file_upload.exception.InvalidFilenameException;
 import org.springframework.stereotype.Component;
 

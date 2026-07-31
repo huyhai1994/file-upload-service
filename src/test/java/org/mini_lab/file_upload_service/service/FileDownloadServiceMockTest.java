@@ -2,7 +2,7 @@ package org.mini_lab.file_upload_service.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mini_lab.file_upload_service.file_upload.dto.file_upload.FileDownloadResource;
+import org.mini_lab.file_upload_service.file_upload.dto.FileDownloadResource;
 import org.mini_lab.file_upload_service.file_upload.entity.FileMetadata;
 import org.mini_lab.file_upload_service.file_upload.exception.FileNotAvailableException;
 import org.mini_lab.file_upload_service.file_upload.exception.FileNotFoundException;

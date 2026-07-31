@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mini_lab.file_upload_service.file_upload.component.ExtensionExtractor;
 import org.mini_lab.file_upload_service.file_upload.component.ObjectKeyGenerator;
-import org.mini_lab.file_upload_service.file_upload.dto.file_upload.FileUploadCommand;
+import org.mini_lab.file_upload_service.file_upload.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.file_upload.entity.FileMetadata;
 import org.mini_lab.file_upload_service.file_upload.entity.FileState;
 import org.mini_lab.file_upload_service.file_upload.repository.FileMetadataRepository;

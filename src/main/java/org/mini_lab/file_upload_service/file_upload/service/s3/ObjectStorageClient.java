@@ -1,7 +1,7 @@
 package org.mini_lab.file_upload_service.file_upload.service.s3;
 
-import org.mini_lab.file_upload_service.file_upload.dto.file_upload.FileUploadCommand;
-import org.mini_lab.file_upload_service.file_upload.dto.file_upload.UploadObjectResult;
+import org.mini_lab.file_upload_service.file_upload.dto.FileUploadCommand;
+import org.mini_lab.file_upload_service.file_upload.dto.UploadObjectResult;
 
 import java.io.InputStream;
 

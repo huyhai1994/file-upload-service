@@ -2,9 +2,9 @@ package org.mini_lab.file_upload_service.file_upload.controller;
 
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
-import org.mini_lab.file_upload_service.file_upload.dto.ApiResponse;
-import org.mini_lab.file_upload_service.file_upload.dto.file_upload.FileMetadataResponseDTO;
-import org.mini_lab.file_upload_service.file_upload.dto.file_upload.UploadRequestObjectDTO;
+import org.mini_lab.file_upload_service.shared.response.ApiResponse;
+import org.mini_lab.file_upload_service.file_upload.dto.FileMetadataResponseDTO;
+import org.mini_lab.file_upload_service.file_upload.dto.UploadRequestObjectDTO;
 import org.mini_lab.file_upload_service.file_upload.service.upload.FileUploadService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

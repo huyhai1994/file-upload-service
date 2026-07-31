@@ -2,7 +2,7 @@ package org.mini_lab.file_upload_service.file_upload.service.delete;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.mini_lab.file_upload_service.file_upload.dto.file_upload.FileDeleteResponseDTO;
+import org.mini_lab.file_upload_service.file_upload.dto.FileDeleteResponseDTO;
 import org.mini_lab.file_upload_service.file_upload.entity.FileMetadata;
 import org.mini_lab.file_upload_service.file_upload.entity.FileState;
 import org.mini_lab.file_upload_service.file_upload.exception.FileNotFoundException;

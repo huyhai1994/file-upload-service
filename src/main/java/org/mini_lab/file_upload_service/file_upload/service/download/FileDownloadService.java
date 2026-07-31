@@ -1,7 +1,7 @@
 package org.mini_lab.file_upload_service.file_upload.service.download;
 
 import lombok.RequiredArgsConstructor;
-import org.mini_lab.file_upload_service.file_upload.dto.file_upload.FileDownloadResource;
+import org.mini_lab.file_upload_service.file_upload.dto.FileDownloadResource;
 import org.mini_lab.file_upload_service.file_upload.entity.FileMetadata;
 import org.mini_lab.file_upload_service.file_upload.entity.FileState;
 import org.mini_lab.file_upload_service.file_upload.exception.FileNotAvailableException;
