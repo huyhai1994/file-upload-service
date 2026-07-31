@@ -2,11 +2,11 @@ package org.mini_lab.file_upload_service.controller;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mini_lab.file_upload_service.file_upload.dto.file_upload.FileUploadCommand;
-import org.mini_lab.file_upload_service.file_upload.entity.FileMetadata;
-import org.mini_lab.file_upload_service.file_upload.entity.FileState;
-import org.mini_lab.file_upload_service.file_upload.repository.FileMetadataRepository;
-import org.mini_lab.file_upload_service.file_upload.service.s3.ObjectStorageClient;
+import org.mini_lab.file_upload_service.file_upload.dto.FileUploadCommand;
+import org.mini_lab.file_upload_service.file_upload.shared.entity.FileMetadata;
+import org.mini_lab.file_upload_service.file_upload.shared.entity.FileState;
+import org.mini_lab.file_upload_service.file_upload.shared.repository.FileMetadataRepository;
+import org.mini_lab.file_upload_service.file_upload.shared.s3.ObjectStorageClient;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.mini_lab.file_upload_service.support.MockObjectBuilder;
 import org.springframework.beans.factory.annotation.Autowired;

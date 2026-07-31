@@ -1,6 +1,6 @@
 package org.mini_lab.file_upload_service.file_upload.exception;
 
-import org.mini_lab.file_upload_service.file_upload.entity.FileState;
+import org.mini_lab.file_upload_service.file_upload.shared.entity.FileState;
 
 public class FileNotAvailableException extends RuntimeException {
     public FileNotAvailableException(Long fileId, FileState state) {

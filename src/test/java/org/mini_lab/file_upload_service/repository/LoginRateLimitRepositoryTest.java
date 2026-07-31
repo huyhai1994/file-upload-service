@@ -3,7 +3,7 @@ package org.mini_lab.file_upload_service.repository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mini_lab.file_upload_service.rate_limiter.repository.LoginRateLimitRepository;
+import org.mini_lab.file_upload_service.security.rate_limiter.repository.LoginRateLimitRepository;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.mini_lab.file_upload_service.support.TestClockConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;

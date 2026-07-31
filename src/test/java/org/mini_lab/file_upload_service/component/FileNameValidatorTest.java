@@ -1,7 +1,7 @@
 package org.mini_lab.file_upload_service.component;
 
 import org.junit.jupiter.api.Test;
-import org.mini_lab.file_upload_service.file_upload.component.FileNameValidator;
+import org.mini_lab.file_upload_service.file_upload.shared.component.FileNameValidator;
 import org.mini_lab.file_upload_service.file_upload.exception.InvalidFilenameException;
 
 import static org.junit.jupiter.api.Assertions.*;

@@ -2,7 +2,7 @@ package org.mini_lab.file_upload_service.component;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mini_lab.file_upload_service.file_upload.component.UUIDObjectKeyGenerator;
+import org.mini_lab.file_upload_service.file_upload.shared.component.UUIDObjectKeyGenerator;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;

@@ -1,7 +1,7 @@
 package org.mini_lab.file_upload_service.component;
 
 import org.junit.jupiter.api.Test;
-import org.mini_lab.file_upload_service.file_upload.component.ExtensionExtractor;
+import org.mini_lab.file_upload_service.file_upload.shared.component.ExtensionExtractor;
 
 import java.util.Optional;
 

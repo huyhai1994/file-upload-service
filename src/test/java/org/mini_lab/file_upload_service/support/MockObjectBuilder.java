@@ -2,10 +2,10 @@ package org.mini_lab.file_upload_service.support;
 
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
-import org.mini_lab.file_upload_service.file_upload.dto.file_upload.FileUploadCommand;
-import org.mini_lab.file_upload_service.file_upload.dto.file_upload.UploadObjectResult;
-import org.mini_lab.file_upload_service.file_upload.entity.FileMetadata;
-import org.mini_lab.file_upload_service.file_upload.entity.FileState;
+import org.mini_lab.file_upload_service.file_upload.dto.FileUploadCommand;
+import org.mini_lab.file_upload_service.file_upload.dto.UploadObjectResult;
+import org.mini_lab.file_upload_service.file_upload.shared.entity.FileMetadata;
+import org.mini_lab.file_upload_service.file_upload.shared.entity.FileState;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 

@@ -2,9 +2,9 @@ package org.mini_lab.file_upload_service.scheduler;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mini_lab.file_upload_service.file_upload.scheduler.FileDeleteRetryScheduler;
-import org.mini_lab.file_upload_service.file_upload.service.retry.FileDeleteRetryService;
-import org.mini_lab.file_upload_service.file_upload.service.retry.TimedOutFileFinder;
+import org.mini_lab.file_upload_service.file_upload.delete.scheduler.FileDeleteRetryScheduler;
+import org.mini_lab.file_upload_service.file_upload.delete.service.FileDeleteRetryService;
+import org.mini_lab.file_upload_service.file_upload.delete.service.TimedOutFileFinder;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;

@@ -2,7 +2,7 @@ package org.mini_lab.file_upload_service.component;
 
 
 import org.junit.jupiter.api.Test;
-import org.mini_lab.file_upload_service.file_upload.component.Sha256MessageDigestFactory;
+import org.mini_lab.file_upload_service.file_upload.shared.component.Sha256MessageDigestFactory;
 
 import java.security.MessageDigest;
 

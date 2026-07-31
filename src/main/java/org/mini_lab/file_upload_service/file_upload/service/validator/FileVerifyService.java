@@ -1,9 +1,9 @@
 package org.mini_lab.file_upload_service.file_upload.service.validator;
 
 import io.opentelemetry.instrumentation.annotations.WithSpan;
-import org.mini_lab.file_upload_service.file_upload.component.FileValidator;
-import org.mini_lab.file_upload_service.file_upload.dto.file_upload.FileUploadCommand;
-import org.mini_lab.file_upload_service.file_upload.entity.FileState;
+import org.mini_lab.file_upload_service.file_upload.shared.component.FileValidator;
+import org.mini_lab.file_upload_service.file_upload.dto.FileUploadCommand;
+import org.mini_lab.file_upload_service.file_upload.shared.entity.FileState;
 import org.mini_lab.file_upload_service.file_upload.exception.FileNotAvailableException;
 import org.springframework.stereotype.Service;
 

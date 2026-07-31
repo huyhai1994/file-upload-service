@@ -2,13 +2,13 @@ package org.mini_lab.file_upload_service.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mini_lab.file_upload_service.file_upload.entity.FileMetadata;
-import org.mini_lab.file_upload_service.file_upload.entity.FileState;
+import org.mini_lab.file_upload_service.file_upload.shared.entity.FileMetadata;
+import org.mini_lab.file_upload_service.file_upload.shared.entity.FileState;
 import org.mini_lab.file_upload_service.file_upload.exception.FileNotAvailableException;
 import org.mini_lab.file_upload_service.file_upload.exception.FileNotFoundException;
-import org.mini_lab.file_upload_service.file_upload.repository.FileMetadataRepository;
-import org.mini_lab.file_upload_service.file_upload.service.delete.FileDeleteService;
-import org.mini_lab.file_upload_service.file_upload.service.s3.ObjectStorageClient;
+import org.mini_lab.file_upload_service.file_upload.shared.repository.FileMetadataRepository;
+import org.mini_lab.file_upload_service.file_upload.delete.service.FileDeleteService;
+import org.mini_lab.file_upload_service.file_upload.shared.s3.ObjectStorageClient;
 import org.mini_lab.file_upload_service.file_upload.service.state_manager.FileMetadataStateManager;
 import org.mini_lab.file_upload_service.file_upload.service.validator.FileVerifyService;
 import org.mini_lab.file_upload_service.support.MockObjectBuilder;
