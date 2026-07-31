@@ -2,9 +2,9 @@ package org.mini_lab.file_upload_service;
 
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
-import org.mini_lab.file_upload_service.entity.FileMetadata;
-import org.mini_lab.file_upload_service.entity.FileState;
-import org.mini_lab.file_upload_service.repository.FileMetadataRepository;
+import org.mini_lab.file_upload_service.file_upload.entity.FileMetadata;
+import org.mini_lab.file_upload_service.file_upload.entity.FileState;
+import org.mini_lab.file_upload_service.file_upload.repository.FileMetadataRepository;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.mini_lab.file_upload_service.support.TestClockConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;

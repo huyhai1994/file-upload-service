@@ -1,9 +1,9 @@
 package org.mini_lab.file_upload_service.service;
 
 import org.junit.jupiter.api.Test;
-import org.mini_lab.file_upload_service.component.FileValidator;
-import org.mini_lab.file_upload_service.dto.file_upload.FileUploadCommand;
-import org.mini_lab.file_upload_service.service.validator.FileVerifyService;
+import org.mini_lab.file_upload_service.file_upload.component.FileValidator;
+import org.mini_lab.file_upload_service.file_upload.dto.file_upload.FileUploadCommand;
+import org.mini_lab.file_upload_service.file_upload.service.validator.FileVerifyService;
 import org.mockito.InOrder;
 
 import java.util.List;

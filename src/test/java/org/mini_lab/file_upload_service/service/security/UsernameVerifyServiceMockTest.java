@@ -2,9 +2,10 @@ package org.mini_lab.file_upload_service.service.security;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mini_lab.file_upload_service.exception.security.UsernameAlreadyExistsException;
-import org.mini_lab.file_upload_service.exception.security.UsernameLengthExceededException;
-import org.mini_lab.file_upload_service.repository.UserRepository;
+import org.mini_lab.file_upload_service.security.exception.UsernameAlreadyExistsException;
+import org.mini_lab.file_upload_service.security.exception.UsernameLengthExceededException;
+import org.mini_lab.file_upload_service.security.repository.UserRepository;
+import org.mini_lab.file_upload_service.security.service.UsernameVerifyService;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;

@@ -1,15 +1,15 @@
 package org.mini_lab.file_upload_service.aspect;
 
 import org.junit.jupiter.api.Test;
-import org.mini_lab.file_upload_service.dto.ApiError;
-import org.mini_lab.file_upload_service.dto.ApiResponse;
-import org.mini_lab.file_upload_service.entity.FileState;
-import org.mini_lab.file_upload_service.enums.file_upload.ErrorCode;
-import org.mini_lab.file_upload_service.exception.file_upload.*;
-import org.mini_lab.file_upload_service.exception.security.PasswordLengthExceededException;
-import org.mini_lab.file_upload_service.exception.security.PasswordTooShortException;
-import org.mini_lab.file_upload_service.exception.security.UsernameAlreadyExistsException;
-import org.mini_lab.file_upload_service.exception.security.UsernameLengthExceededException;
+import org.mini_lab.file_upload_service.file_upload.dto.ApiError;
+import org.mini_lab.file_upload_service.file_upload.dto.ApiResponse;
+import org.mini_lab.file_upload_service.file_upload.entity.FileState;
+import org.mini_lab.file_upload_service.file_upload.enums.ErrorCode;
+import org.mini_lab.file_upload_service.security.exception.PasswordLengthExceededException;
+import org.mini_lab.file_upload_service.security.exception.PasswordTooShortException;
+import org.mini_lab.file_upload_service.security.exception.UsernameAlreadyExistsException;
+import org.mini_lab.file_upload_service.security.exception.UsernameLengthExceededException;
+import org.mini_lab.file_upload_service.file_upload.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaSystemException;

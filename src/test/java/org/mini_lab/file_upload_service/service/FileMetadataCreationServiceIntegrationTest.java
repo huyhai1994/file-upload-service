@@ -2,10 +2,10 @@ package org.mini_lab.file_upload_service.service;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.mini_lab.file_upload_service.dto.file_upload.FileUploadCommand;
-import org.mini_lab.file_upload_service.entity.FileMetadata;
-import org.mini_lab.file_upload_service.repository.FileMetadataRepository;
-import org.mini_lab.file_upload_service.service.upload.FileMetadataCreationService;
+import org.mini_lab.file_upload_service.file_upload.dto.file_upload.FileUploadCommand;
+import org.mini_lab.file_upload_service.file_upload.entity.FileMetadata;
+import org.mini_lab.file_upload_service.file_upload.repository.FileMetadataRepository;
+import org.mini_lab.file_upload_service.file_upload.service.upload.FileMetadataCreationService;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
