@@ -1,6 +1,7 @@
 package org.mini_lab.file_upload_service.security.authentication.configuration;
 
 import org.mini_lab.file_upload_service.security.authentication.service.CustomUserDetailsManager;
+import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,12 +23,10 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationProvider daoAuthenticationProvider) {
-        return new ProviderManager(daoAuthenticationProvider);
-    }
-
-    @Bean
-    public AuthenticationProvider daoAuthenticationProvider(CustomUserDetailsManager customUserDetailsManager, PasswordEncoder passwordEncoder) {
+    public AuthenticationProvider daoAuthenticationProvider(
+            CustomUserDetailsManager customUserDetailsManager,
+            PasswordEncoder passwordEncoder
+    ) {
         DaoAuthenticationProvider provider =
                 new DaoAuthenticationProvider(customUserDetailsManager);
 
@@ -37,17 +36,34 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity
+    public AuthenticationManager authenticationManager(
+            AuthenticationProvider daoAuthenticationProvider
     ) {
+        return new ProviderManager(daoAuthenticationProvider);
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity httpSecurity
+    ) {
+
         httpSecurity
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/api/v1/auth/register")
-                        .ignoringRequestMatchers("/api/v1/auth/login")
+                        .ignoringRequestMatchers(
+                                "/api/v1/auth/register",
+                                "/api/v1/auth/login"
+                        )
                 )
                 .httpBasic(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/register").permitAll()
-                        .requestMatchers("/api/v1/auth/login").permitAll()
+                        .requestMatchers(
+                                EndpointRequest.to("health"),
+                                EndpointRequest.to("prometheus")
+                        ).permitAll()
+                        .requestMatchers(
+                                "/api/v1/auth/register",
+                                "/api/v1/auth/login"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 );
 
