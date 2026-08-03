@@ -51,3 +51,7 @@ logging:
     org:
       springframework:
         security: DEBUG
+server:
+  tomcat:
+    mbeanregistry:
+      enabled: true
