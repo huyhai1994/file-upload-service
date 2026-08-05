@@ -7,6 +7,7 @@ import org.mini_lab.file_upload_service.security.authentication.entity.User;
 import org.mini_lab.file_upload_service.file_upload.enums.ErrorCode;
 import org.mini_lab.file_upload_service.security.authentication.repository.UserRepository;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
+import org.mini_lab.file_upload_service.support.RaceConditionSimulator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -30,6 +31,7 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mini_lab.file_upload_service.support.MockUserBuilder.DEFAULT_USERNAME;
 import static org.mini_lab.file_upload_service.support.MockUserBuilder.NORMALIZED_USERNAME;
+import static org.mini_lab.file_upload_service.support.RaceConditionSimulator.getRaceConditionSimulator;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -253,56 +255,37 @@ class AuthenticationControllerIntegrationTest
                 VALID_PASSWORD
         );
 
-        CountDownLatch readyLatch =
-                new CountDownLatch(CONCURRENT_REQUEST_COUNT);
+        try (RaceConditionSimulator raceConditionSimulator = getRaceConditionSimulator(CONCURRENT_REQUEST_COUNT)) {
+            List<MvcResult> mvcResults = raceConditionSimulator.execute(() -> performRegister(requestBody));
 
-        CountDownLatch startLatch =
-                new CountDownLatch(1);
+            List<Integer> responseStatuses = mvcResults.stream()
+                    .map(MvcResult::getResponse)
+                    .map(MockHttpServletResponse::getStatus)
+                    .toList();
 
-        List<CompletableFuture<MvcResult>> futures =
-                createConcurrentRegisterRequests(
-                        requestBody,
-                        readyLatch,
-                        startLatch
-                );
+            assertThat(responseStatuses)
+                    .containsExactlyInAnyOrder(
+                            HttpStatus.CREATED.value(),
+                            HttpStatus.CONFLICT.value()
+                    );
 
-        assertThat(
-                readyLatch.await(5, TimeUnit.SECONDS)
-        ).isTrue();
+            assertThat(userRepository.count()).isEqualTo(1);
 
-        startLatch.countDown();
+            User savedUser = userRepository
+                    .findByUsername("concurrentuser")
+                    .orElseThrow();
 
-        CompletableFuture
-                .allOf(futures.toArray(CompletableFuture[]::new))
-                .get(10, TimeUnit.SECONDS);
+            assertThat(savedUser.getUsername())
+                    .isEqualTo("concurrentuser");
 
-        List<Integer> responseStatuses = futures.stream()
-                .map(CompletableFuture::join)
-                .map(MvcResult::getResponse)
-                .map(MockHttpServletResponse::getStatus)
-                .toList();
+            assertThat(
+                    passwordEncoder.matches(
+                            VALID_PASSWORD,
+                            savedUser.getPasswordHash()
+                    )
+            ).isTrue();
+        }
 
-        assertThat(responseStatuses)
-                .containsExactlyInAnyOrder(
-                        HttpStatus.CREATED.value(),
-                        HttpStatus.CONFLICT.value()
-                );
-
-        assertThat(userRepository.count()).isEqualTo(1);
-
-        User savedUser = userRepository
-                .findByUsername("concurrentuser")
-                .orElseThrow();
-
-        assertThat(savedUser.getUsername())
-                .isEqualTo("concurrentuser");
-
-        assertThat(
-                passwordEncoder.matches(
-                        VALID_PASSWORD,
-                        savedUser.getPasswordHash()
-                )
-        ).isTrue();
     }
 
     private ResultActions performRegister(
@@ -386,46 +369,5 @@ class AuthenticationControllerIntegrationTest
         assertThat(users).hasSize(1);
 
         return users.get(0);
-    }
-
-    private List<CompletableFuture<MvcResult>>
-    createConcurrentRegisterRequests(
-            String requestBody,
-            CountDownLatch readyLatch,
-            CountDownLatch startLatch
-    ) {
-        return IntStream
-                .range(0, CONCURRENT_REQUEST_COUNT)
-                .mapToObj(index -> CompletableFuture.supplyAsync(
-                        () -> {
-                            readyLatch.countDown();
-
-                            awaitStartSignal(startLatch);
-
-                            try {
-                                return performRegister(requestBody);
-                            } catch (Exception exception) {
-                                throw new IllegalStateException(
-                                        "Register request failed",
-                                        exception
-                                );
-                            }
-                        },
-                        executorService
-                ))
-                .toList();
-    }
-
-    private void awaitStartSignal(CountDownLatch startLatch) {
-        try {
-            startLatch.await();
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-
-            throw new IllegalStateException(
-                    "Concurrent register request was interrupted",
-                    exception
-            );
-        }
     }
 }

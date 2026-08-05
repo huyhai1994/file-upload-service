@@ -18,7 +18,7 @@ public class RaceConditionSimulator implements AutoCloseable {
     private final CountDownLatch readyLatch;
     private final CountDownLatch startLatch;
 
-    public RaceConditionSimulator(int concurrentRequestCount) {
+    private RaceConditionSimulator(int concurrentRequestCount) {
         if (concurrentRequestCount <= 0) {
             throw new IllegalArgumentException(
                     "concurrentRequestCount must be greater than zero"
@@ -34,6 +34,10 @@ public class RaceConditionSimulator implements AutoCloseable {
 
         this.startLatch =
                 new CountDownLatch(1);
+    }
+
+    public static RaceConditionSimulator getRaceConditionSimulator(int concurrentRequestCount) {
+        return new RaceConditionSimulator(concurrentRequestCount);
     }
 
     public <T> List<T> execute(Callable<T> task)

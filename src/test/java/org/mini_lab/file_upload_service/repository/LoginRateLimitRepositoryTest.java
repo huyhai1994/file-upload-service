@@ -20,6 +20,7 @@ import java.util.concurrent.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mini_lab.file_upload_service.support.MockLoginRequestBuilder.IDENTITY_HASH;
+import static org.mini_lab.file_upload_service.support.RaceConditionSimulator.getRaceConditionSimulator;
 
 @ActiveProfiles("test")
 @DataJpaTest
@@ -46,7 +47,7 @@ class LoginRateLimitRepositoryTest extends AbstractIntegrationTest {
                 .truncatedTo(ChronoUnit.MINUTES);
 
         try (RaceConditionSimulator simulator =
-                     new RaceConditionSimulator(5)) {
+                     getRaceConditionSimulator(5)) {
 
             List<Integer> affectedRows = simulator.execute(
                     () -> performIncrement(windowStart)

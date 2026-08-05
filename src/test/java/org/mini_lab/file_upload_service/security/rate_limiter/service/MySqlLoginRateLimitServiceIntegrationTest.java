@@ -15,6 +15,7 @@ import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mini_lab.file_upload_service.support.MockLoginRequestBuilder.IDENTITY_HASH;
+import static org.mini_lab.file_upload_service.support.RaceConditionSimulator.getRaceConditionSimulator;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -38,7 +39,7 @@ class MySqlLoginRateLimitServiceIntegrationTest extends AbstractIntegrationTest 
 
 
         try (RaceConditionSimulator simulator =
-                     new RaceConditionSimulator(concurrentRequestCount)) {
+                     getRaceConditionSimulator(concurrentRequestCount)) {
 
             List<Boolean> results = simulator.execute(
                     () -> mySqlLoginRateLimitService.allow(IDENTITY_HASH)
