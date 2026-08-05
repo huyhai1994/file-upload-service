@@ -36,7 +36,9 @@ public enum ErrorCode {
     BAD_CREDENTIAL("Invalid username or password!"),
 
     // Common
-    INTERNAL_SERVER_ERROR("Internal server error");
+    INTERNAL_SERVER_ERROR("Internal server error"),
+
+    TOO_MANY_REQUESTS("Too Many Requests");
 
     private final String defaultMessage;
 }

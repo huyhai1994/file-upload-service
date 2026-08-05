@@ -46,6 +46,8 @@ security:
     secret-key: GpP5Ko/lSAodfqg3B/TJpcijh06eST3P2M0pn6ZTIYY=
     access-token-expiration: 15m
     issuer: file-upload-service
+  identity-hash:
+    secret-key: eWeHbeT1wLynBeNl/odFQUTNONHIPXyNTd6la4puAdc=
 logging:
   level:
     org:
@@ -55,3 +57,6 @@ server:
   tomcat:
     mbeanregistry:
       enabled: true
+login-rate-limit:
+  username-ip-max-attempts: 5
+  window-duration: 1m
