@@ -1,9 +1,8 @@
 package org.mini_lab.file_upload_service.support;
 
+import com.redis.testcontainers.RedisContainer;
 import eu.rekawek.toxiproxy.Proxy;
 import eu.rekawek.toxiproxy.ToxiproxyClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.Network;
@@ -12,6 +11,7 @@ import org.testcontainers.containers.MinIOContainer;
 import org.testcontainers.lifecycle.Startables;
 import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.toxiproxy.ToxiproxyContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.io.IOException;
 import java.util.stream.Stream;
@@ -27,11 +27,14 @@ public abstract class AbstractIntegrationTest {
 
     private static final int MYSQL_PROXY_PORT = 8666;
     private static final int MINIO_PROXY_PORT = 8667;
+    private static final int REDIS_PROXY_PORT = 8668;
 
     private static final Network NETWORK =
             Network.newNetwork();
 
     private static final MySQLContainer mysqlDb;
+
+    private static final RedisContainer redisDB;
 
     private static final MinIOContainer minioStorage;
 
@@ -39,6 +42,7 @@ public abstract class AbstractIntegrationTest {
 
     protected static Proxy mysqlProxy;
     protected static Proxy minioProxy;
+    protected static Proxy redisProxy;
 
     static {
         mysqlDb = new MySQLContainer("mysql:8.0")
@@ -47,6 +51,10 @@ public abstract class AbstractIntegrationTest {
                 .withPassword("test")
                 .withNetwork(NETWORK)
                 .withNetworkAliases("mysql");
+
+        redisDB = new RedisContainer(DockerImageName.parse("redis:6.2.6"))
+                .withNetwork(NETWORK)
+                .withNetworkAliases("redis");
 
         minioStorage = new MinIOContainer(
                 "minio/minio:RELEASE.2023-09-04T19-57-37Z"
@@ -64,6 +72,7 @@ public abstract class AbstractIntegrationTest {
                 Stream.of(
                         mysqlDb,
                         minioStorage,
+                        redisDB,
                         toxiproxyContainer
                 )
         ).join();
@@ -87,6 +96,11 @@ public abstract class AbstractIntegrationTest {
                     "minio",
                     "0.0.0.0:" + MINIO_PROXY_PORT,
                     "minio:9000"
+            );
+
+            redisProxy = toxiproxyClient.createProxy("redis",
+                    "0.0.0.0:" + REDIS_PROXY_PORT,
+                    "redis:6379"
             );
         } catch (IOException exception) {
             throw new IllegalStateException(
@@ -152,6 +166,33 @@ public abstract class AbstractIntegrationTest {
                                 MINIO_PROXY_PORT
                         )
                 )
+        );
+
+        registry.add(
+                "spring.data.redis.host",
+                toxiproxyContainer::getHost
+        );
+
+        registry.add(
+                "spring.data.redis.port",
+                () -> toxiproxyContainer.getMappedPort(
+                        REDIS_PROXY_PORT
+                )
+        );
+
+        registry.add(
+                "spring.data.redis.database",
+                () -> 0
+        );
+
+        registry.add(
+                "spring.data.redis.connect-timeout",
+                () -> "2s"
+        );
+
+        registry.add(
+                "spring.data.redis.timeout",
+                () -> "2s"
         );
     }
 }
