@@ -12,7 +12,7 @@ import org.mini_lab.file_upload_service.file_upload.dto.UploadObjectResult;
 import org.mini_lab.file_upload_service.file_upload.exception.ObjectStorageException;
 import org.mini_lab.file_upload_service.file_upload.shared.s3.MinIOObjectStorageClient;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
-import org.mini_lab.file_upload_service.support.TrafficBlockedSimulationTools;
+import org.mini_lab.file_upload_service.support.failure_simulator.TrafficBlockedSimulationTools;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;

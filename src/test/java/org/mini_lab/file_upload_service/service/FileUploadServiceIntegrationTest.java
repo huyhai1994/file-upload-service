@@ -20,7 +20,7 @@ import org.mini_lab.file_upload_service.file_upload.upload.service.FileMetadataC
 import org.mini_lab.file_upload_service.file_upload.upload.service.FileUploadService;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.mini_lab.file_upload_service.support.MockObjectBuilder;
-import org.mini_lab.file_upload_service.support.TrafficBlockedSimulationTools;
+import org.mini_lab.file_upload_service.support.failure_simulator.TrafficBlockedSimulationTools;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;

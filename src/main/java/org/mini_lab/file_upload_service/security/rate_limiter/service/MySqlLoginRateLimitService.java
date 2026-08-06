@@ -5,12 +5,14 @@ import org.mini_lab.file_upload_service.security.rate_limiter.component.Calculat
 import org.mini_lab.file_upload_service.security.rate_limiter.component.RateLimitValidator;
 import org.mini_lab.file_upload_service.security.rate_limiter.properties.LoginRateLimitProperties;
 import org.mini_lab.file_upload_service.security.rate_limiter.repository.LoginRateLimitRepository;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 
+@Service("mySqlLoginRateLimitService")
 @RequiredArgsConstructor
 public class MySqlLoginRateLimitService implements LoginRateLimitService {
 

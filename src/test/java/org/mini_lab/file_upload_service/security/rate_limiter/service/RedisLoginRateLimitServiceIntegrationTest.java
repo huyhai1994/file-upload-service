@@ -1,16 +1,21 @@
 package org.mini_lab.file_upload_service.security.rate_limiter.service;
 
 import org.junit.jupiter.api.Test;
+import org.mini_lab.file_upload_service.security.rate_limiter.exceptions.RateLimiterUnavailableException;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
+import org.mini_lab.file_upload_service.support.failure_simulator.ExternalServiceConnectionResetSimulator;
 import org.mini_lab.file_upload_service.support.RaceConditionSimulator;
+import org.mini_lab.file_upload_service.support.failure_simulator.TrafficBlockedSimulationTools;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 @ActiveProfiles({"test"})
@@ -47,4 +52,38 @@ class RedisLoginRateLimitServiceIntegrationTest
                     .hasSize(5);
         }
     }
+
+    @Test
+    void allow_whenNetworkTrafficBlocked_thenShouldThrowException()
+            throws Exception {
+
+        String identity =
+                "test-identity-" + UUID.randomUUID();
+
+        try (TrafficBlockedSimulationTools ignored =
+                     TrafficBlockedSimulationTools.applyTo(redisProxy)
+        ) {
+            assertThrows(RateLimiterUnavailableException.class,
+                    () -> service.allow(identity)
+            );
+
+        }
+    }
+
+    @Test
+    void allow_whenNetworkConnectionReset_thenShouldThrowException() throws IOException {
+        String identity =
+                "test-identity-" + UUID.randomUUID();
+
+        try (ExternalServiceConnectionResetSimulator ignored =
+                     ExternalServiceConnectionResetSimulator.applyTo(redisProxy)
+        ) {
+            assertThrows(RateLimiterUnavailableException.class,
+                    () -> service.allow(identity)
+            );
+
+        }
+
+    }
+
 }

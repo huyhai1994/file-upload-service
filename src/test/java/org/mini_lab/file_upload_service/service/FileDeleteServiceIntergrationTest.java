@@ -11,7 +11,7 @@ import org.mini_lab.file_upload_service.file_upload.delete.service.FileDeleteSer
 import org.mini_lab.file_upload_service.file_upload.shared.s3.ObjectStorageClient;
 import org.mini_lab.file_upload_service.file_upload.service.state_manager.FileMetadataStateManager;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
-import org.mini_lab.file_upload_service.support.ExternalServiceConnectionResetSimulator;
+import org.mini_lab.file_upload_service.support.failure_simulator.ExternalServiceConnectionResetSimulator;
 import org.mini_lab.file_upload_service.support.MockObjectBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -59,7 +59,7 @@ class FileDeleteServiceIntergrationTest extends AbstractIntegrationTest {
 
     @Test
     void processDeleteFile_whenDBConnectionReset_thenThrowsCannotCreateTransactionException() throws IOException {
-        try (ExternalServiceConnectionResetSimulator ignored = new ExternalServiceConnectionResetSimulator(mysqlProxy)) {
+        try (ExternalServiceConnectionResetSimulator ignored = ExternalServiceConnectionResetSimulator.applyTo(mysqlProxy)) {
             assertThrows(CannotCreateTransactionException.class, () -> fileDeleteService.processDeleteFile(fileId));
         }
     }
@@ -67,7 +67,7 @@ class FileDeleteServiceIntergrationTest extends AbstractIntegrationTest {
     @Test
     void processDeleteFile_whenMarkDeletingThenDbConnectionReset_thenThrowsCannotCreateTransactionException() {
         doAnswer(invocation -> {
-            try (ExternalServiceConnectionResetSimulator ignored = new ExternalServiceConnectionResetSimulator(mysqlProxy)) {
+            try (ExternalServiceConnectionResetSimulator ignored = ExternalServiceConnectionResetSimulator.applyTo(mysqlProxy)) {
                 return invocation.callRealMethod();
             }
         }).when(fileMetadataStateManager).markDeleting(fileId);
@@ -87,7 +87,7 @@ class FileDeleteServiceIntergrationTest extends AbstractIntegrationTest {
 
         doAnswer(invocation -> {
             try (ExternalServiceConnectionResetSimulator ignored =
-                         new ExternalServiceConnectionResetSimulator(minioProxy)) {
+                         ExternalServiceConnectionResetSimulator.applyTo(minioProxy)) {
 
                 return invocation.callRealMethod();
             }

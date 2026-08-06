@@ -25,6 +25,7 @@ public class LoginRateLimiterFilter extends OncePerRequestFilter {
     private final HandlerExceptionResolver exceptionResolver;
 
     public LoginRateLimiterFilter(
+            @Qualifier("redisLoginRateLimitService")
             LoginRateLimitService loginRateLimitService,
             IPAddressDetector ipAddressDetector,
             IdentityHasher identityHasher,

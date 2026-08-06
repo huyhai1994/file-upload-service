@@ -1,4 +1,4 @@
-package org.mini_lab.file_upload_service.support;
+package org.mini_lab.file_upload_service.support.failure_simulator;
 
 
 import eu.rekawek.toxiproxy.Proxy;
