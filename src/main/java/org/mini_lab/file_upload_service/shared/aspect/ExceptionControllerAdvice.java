@@ -3,6 +3,7 @@ package org.mini_lab.file_upload_service.shared.aspect;
 import lombok.extern.slf4j.Slf4j;
 import org.mini_lab.file_upload_service.security.rate_limiter.entity.LoginRateLimit;
 import org.mini_lab.file_upload_service.security.rate_limiter.exceptions.LoginRateLimitExceededException;
+import org.mini_lab.file_upload_service.security.rate_limiter.exceptions.RateLimiterUnavailableException;
 import org.mini_lab.file_upload_service.shared.response.ApiError;
 import org.mini_lab.file_upload_service.shared.response.ApiResponse;
 import org.mini_lab.file_upload_service.file_upload.enums.ErrorCode;
@@ -89,7 +90,8 @@ public class ExceptionControllerAdvice {
             FileReadException.class,
             JpaSystemException.class,
             InternalServerException.class,
-            CannotCreateTransactionException.class
+            CannotCreateTransactionException.class,
+            RateLimiterUnavailableException.class
     })
     public ResponseEntity<ApiResponse<Void>> handleInternalServerError(
             Exception exception

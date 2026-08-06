@@ -6,6 +6,7 @@ services:
 
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
 
       OTEL_SERVICE_NAME: file-upload-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:4318
@@ -26,6 +27,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_started
+      redis:
+        condition: service_healthy
 
     restart: unless-stopped
 
@@ -71,6 +74,30 @@ services:
 
     volumes:
       - minio-data:/data
+
+    networks:
+      - backend-network
+  redis:
+    image: redis:6.2.23-alpine
+
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+
+    ports:
+      - "6380:6379"
+
+    command:
+      - sh
+      - -c
+      - exec redis-server --requirepass "$$REDIS_PASSWORD"
+
+    healthcheck:
+      test: [ 'CMD-SHELL' , 'REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli ping | grep PONG' ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+    restart: unless-stopped
 
     networks:
       - backend-network
