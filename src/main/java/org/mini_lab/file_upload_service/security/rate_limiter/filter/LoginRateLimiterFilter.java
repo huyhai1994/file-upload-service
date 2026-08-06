@@ -4,9 +4,11 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.mini_lab.file_upload_service.file_upload.enums.ErrorCode;
 import org.mini_lab.file_upload_service.security.rate_limiter.component.IPAddressDetector;
 import org.mini_lab.file_upload_service.security.rate_limiter.component.IdentityHasher;
 import org.mini_lab.file_upload_service.security.rate_limiter.exceptions.LoginRateLimitExceededException;
+import org.mini_lab.file_upload_service.security.rate_limiter.exceptions.RateLimiterUnavailableException;
 import org.mini_lab.file_upload_service.security.rate_limiter.service.LoginRateLimitService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
@@ -18,6 +20,9 @@ import java.io.IOException;
 
 @Component
 public class LoginRateLimiterFilter extends OncePerRequestFilter {
+
+    private static final String LOGIN_PATH = "/api/v1/auth/login";
+    private static final String IP_IDENTITY_PREFIX = "IP|";
 
     private final LoginRateLimitService loginRateLimitService;
     private final IPAddressDetector ipAddressDetector;
@@ -40,10 +45,8 @@ public class LoginRateLimiterFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !(
-                request.getMethod().equalsIgnoreCase(HttpMethod.POST.name())
-                        && request.getRequestURI().equals("/api/v1/auth/login")
-        );
+        return !HttpMethod.POST.matches(request.getMethod())
+                || !LOGIN_PATH.equals(request.getServletPath());
     }
 
     @Override
@@ -53,22 +56,41 @@ public class LoginRateLimiterFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        String ipAddress = ipAddressDetector.detect(request);
+        String identityHash = createIdentityHash(request);
 
-        String identityHash = identityHasher.hash(
-                "IP|" + ipAddress
-        );
+        try {
+            enforceRateLimit(identityHash);
+        } catch (LoginRateLimitExceededException |
+                 RateLimiterUnavailableException exception) {
 
-        if (!loginRateLimitService.allow(identityHash)) {
-            exceptionResolver.resolveException(
-                    request,
-                    response,
-                    null,
-                    new LoginRateLimitExceededException()
-            );
+            resolveException(request, response, exception);
             return;
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private String createIdentityHash(HttpServletRequest request) {
+        String ipAddress = ipAddressDetector.detect(request);
+        return identityHasher.hash(IP_IDENTITY_PREFIX + ipAddress);
+    }
+
+    private void enforceRateLimit(String identityHash) {
+        if (!loginRateLimitService.allow(identityHash)) {
+            throw new LoginRateLimitExceededException();
+        }
+    }
+
+    private void resolveException(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Exception exception
+    ) {
+        exceptionResolver.resolveException(
+                request,
+                response,
+                null,
+                exception
+        );
     }
 }
