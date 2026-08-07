@@ -10,7 +10,7 @@ import org.mini_lab.file_upload_service.security.authentication.dto.RegisterResp
 import org.mini_lab.file_upload_service.security.authentication.entity.User;
 import org.mini_lab.file_upload_service.security.authentication.exception.UsernameAlreadyExistsException;
 import org.mini_lab.file_upload_service.security.authentication.repository.UserRepository;
-import org.mini_lab.file_upload_service.security.jwt.service.JwtService;
+import org.mini_lab.file_upload_service.security.jwt.service.JwtAccessTokenService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,7 +28,7 @@ public class AuthenticationService {
     private final NormalizeUsernameService normalizeUsernameService;
     private final UsernameVerifyService usernameVerifyService;
     private final PasswordVerifyService passwordVerifyService;
-    private final JwtService jwtService;
+    private final JwtAccessTokenService jwtAccessTokenService;
     private final AuthenticationManager authenticationManager;
 
     @Transactional
@@ -70,7 +70,7 @@ public class AuthenticationService {
                 );
 
         UserDetails principal = (UserDetails) authentication.getPrincipal();
-        String accessToken = jwtService.generateAccessToken(principal);
+        String accessToken = jwtAccessTokenService.generateAccessToken(principal);
 
         return new LoginResponse(accessToken);
 

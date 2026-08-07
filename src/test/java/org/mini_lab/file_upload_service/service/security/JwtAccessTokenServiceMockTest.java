@@ -4,7 +4,7 @@ import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mini_lab.file_upload_service.security.jwt.configuration.JwtProperties;
-import org.mini_lab.file_upload_service.security.jwt.service.JwtService;
+import org.mini_lab.file_upload_service.security.jwt.service.JwtAccessTokenService;
 import org.mini_lab.file_upload_service.support.MockUserBuilder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -21,7 +21,7 @@ import static org.mini_lab.file_upload_service.support.MockTimeBuilder.NOW;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class JwtServiceMockTest {
+class JwtAccessTokenServiceMockTest {
 
     private static final Duration ACCESS_TOKEN_EXPIRATION =
             Duration.ofMinutes(15);
@@ -41,7 +41,7 @@ class JwtServiceMockTest {
     UserDetails userDetails;
 
     @InjectMocks
-    JwtService jwtService;
+    JwtAccessTokenService jwtAccessTokenService;
 
     @Test
     void generateAccessToken_whenUserDetailsValid_thenReturnAccessTokenWithExpectedClaims() {
@@ -55,13 +55,13 @@ class JwtServiceMockTest {
                 .thenReturn(MockUserBuilder.NORMALIZED_USERNAME);
         when(userDetails.getAuthorities()).thenReturn(List.of());
 
-        String accessToken = jwtService.generateAccessToken(userDetails);
+        String accessToken = jwtAccessTokenService.generateAccessToken(userDetails);
 
         assertThat(accessToken)
                 .isNotNull()
                 .isNotBlank();
 
-        Claims claims = jwtService.extractClaims(accessToken);
+        Claims claims = jwtAccessTokenService.extractClaims(accessToken);
 
         assertThat(claims.getSubject())
                 .isEqualTo(MockUserBuilder.NORMALIZED_USERNAME);
@@ -80,7 +80,7 @@ class JwtServiceMockTest {
     void generateAccessToken_whenUserDetailsNull_thenThrowNullPointerException() {
         assertThrows(
                 NullPointerException.class,
-                () -> jwtService.generateAccessToken(null)
+                () -> jwtAccessTokenService.generateAccessToken(null)
         );
     }
 }

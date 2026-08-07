@@ -23,7 +23,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class JwtService {
+public class JwtAccessTokenService {
 
     private static final String AUTHORITIES_CLAIM = "authorities";
 

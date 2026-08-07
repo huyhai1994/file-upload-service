@@ -14,7 +14,7 @@ import org.mini_lab.file_upload_service.security.authentication.exception.Userna
 import org.mini_lab.file_upload_service.security.authentication.exception.UsernameLengthExceededException;
 import org.mini_lab.file_upload_service.security.authentication.repository.UserRepository;
 import org.mini_lab.file_upload_service.security.authentication.service.*;
-import org.mini_lab.file_upload_service.security.jwt.service.JwtService;
+import org.mini_lab.file_upload_service.security.jwt.service.JwtAccessTokenService;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
@@ -69,7 +69,7 @@ class AuthenticationServiceMockTest {
     private Authentication authentication;
 
     @Mock
-    private JwtService jwtService;
+    private JwtAccessTokenService jwtAccessTokenService;
 
 
     @Mock
@@ -201,7 +201,7 @@ class AuthenticationServiceMockTest {
         when(normalizeUsernameService.normalizeUsername(DEFAULT_USERNAME)).thenReturn(NORMALIZED_USERNAME);
 
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
-        when(jwtService.generateAccessToken(any(UserDetails.class))).thenReturn(ACCESS_TOKEN);
+        when(jwtAccessTokenService.generateAccessToken(any(UserDetails.class))).thenReturn(ACCESS_TOKEN);
 
         when(authentication.getPrincipal()).thenReturn(userDetails);
 
@@ -245,7 +245,7 @@ class AuthenticationServiceMockTest {
         verify(authenticationManager)
                 .authenticate(any(UsernamePasswordAuthenticationToken.class));
 
-        verifyNoInteractions(jwtService);
+        verifyNoInteractions(jwtAccessTokenService);
     }
     private RegisterRequest validRegisterRequest() {
         return registerRequest(DEFAULT_USERNAME, VALID_PASSWORD);
@@ -360,7 +360,7 @@ class AuthenticationServiceMockTest {
                 normalizeUsernameService,
                 authenticationManager,
                 authentication,
-                jwtService
+                jwtAccessTokenService
         );
 
         inOrder.verify(normalizeUsernameService)
@@ -372,7 +372,7 @@ class AuthenticationServiceMockTest {
         inOrder.verify(authentication)
                 .getPrincipal();
 
-        inOrder.verify(jwtService)
+        inOrder.verify(jwtAccessTokenService)
                 .generateAccessToken(userDetails);
 
         UsernamePasswordAuthenticationToken capturedToken =

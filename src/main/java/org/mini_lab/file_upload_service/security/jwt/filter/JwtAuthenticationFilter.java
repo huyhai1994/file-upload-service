@@ -5,7 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.mini_lab.file_upload_service.security.jwt.service.JwtService;
+import org.mini_lab.file_upload_service.security.jwt.service.JwtAccessTokenService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
@@ -23,7 +23,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final AuthenticationEntryPoint authenticationEntryPoint;
 
-    private final JwtService jwtService;
+    private final JwtAccessTokenService jwtAccessTokenService;
 
 
     @Override
