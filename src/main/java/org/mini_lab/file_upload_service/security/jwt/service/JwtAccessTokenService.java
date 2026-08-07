@@ -5,9 +5,9 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
+import org.mini_lab.file_upload_service.security.jwt.components.JwtAccessTokenValidator;
 import org.mini_lab.file_upload_service.security.jwt.configuration.JwtProperties;
 import org.mini_lab.file_upload_service.security.jwt.dto.AccessTokenPayload;
-import org.mini_lab.file_upload_service.security.jwt.error_code.ErrorCode;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,6 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -26,20 +25,16 @@ import java.util.UUID;
 public class JwtAccessTokenService {
 
     private static final String AUTHORITIES_CLAIM = "authorities";
-
+    private final JwtAccessTokenValidator jwtAccessTokenValidator;
     private final JwtProperties jwtProperties;
     private final Clock clock;
 
     @WithSpan("jwtservice-generate-access-token")
     public String generateAccessToken(UserDetails userDetails) {
-        Objects.requireNonNull(
-                userDetails,
-                ErrorCode.USER_DETAILS_REQUIRED.getDefaultMessage()
-        );
 
+        jwtAccessTokenValidator.validateUserDetails(userDetails);
         Instant issuedAt = clock.instant();
-        Instant expiresAt =
-                issuedAt.plus(jwtProperties.accessTokenExpiration());
+        Instant expiresAt = issuedAt.plus(jwtProperties.accessTokenExpiration());
 
         List<String> authorities = userDetails.getAuthorities()
                 .stream()
@@ -59,18 +54,11 @@ public class JwtAccessTokenService {
 
     @WithSpan("jwtservice-parse-access-token")
     public AccessTokenPayload parseAndValidate(String accessToken) {
-        Objects.requireNonNull(
-                accessToken,
-                ErrorCode.ACCESS_TOKEN_REQUIRED.getDefaultMessage()
-        );
-
+        jwtAccessTokenValidator.validateAccessToken(accessToken);
         Claims claims = extractClaims(accessToken);
 
         String username = claims.getSubject();
-
-        if (username == null || username.isBlank()) {
-            throw new IllegalArgumentException(ErrorCode.JWT_SUBJECT_REQUIRED.getDefaultMessage());
-        }
+        jwtAccessTokenValidator.validateUsername(username);
 
         List<String> authorities =
                 extractAuthoritiesFromClaims(claims);
@@ -82,10 +70,6 @@ public class JwtAccessTokenService {
     }
 
     public Claims extractClaims(String token) {
-        Objects.requireNonNull(
-                token,
-                ErrorCode.ACCESS_TOKEN_REQUIRED.getDefaultMessage()
-        );
 
         return Jwts.parser()
                 .verifyWith(getSigningKey())
@@ -102,22 +86,11 @@ public class JwtAccessTokenService {
         Object authoritiesClaim =
                 claims.get(AUTHORITIES_CLAIM);
 
-        if (!(authoritiesClaim instanceof List<?> rawAuthorities)) {
-            throw new IllegalArgumentException(
-                    ErrorCode.AUTHORIZE_CLAIMS_IS_ARRAY.getDefaultMessage()
-            );
-        }
+        List<?> rawAuthorities = jwtAccessTokenValidator.validateRawAuthorities(authoritiesClaim);
 
         return rawAuthorities.stream()
-                .map(authority -> {
-                    if (!(authority instanceof String value)) {
-                        throw new IllegalArgumentException(
-                                ErrorCode.AUTHORITY_IS_STRING.getDefaultMessage()
-                        );
-                    }
-
-                    return value;
-                })
+                .map(jwtAccessTokenValidator::validateAuthority
+                )
                 .toList();
     }
 

@@ -4,7 +4,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.mini_lab.file_upload_service.file_upload.enums.ErrorCode;
 import org.mini_lab.file_upload_service.security.rate_limiter.component.IPAddressDetector;
 import org.mini_lab.file_upload_service.security.rate_limiter.component.IdentityHasher;
 import org.mini_lab.file_upload_service.security.rate_limiter.exceptions.LoginRateLimitExceededException;
