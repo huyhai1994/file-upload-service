@@ -2,6 +2,7 @@ package org.mini_lab.file_upload_service.file_upload.upload.service;
 
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.TransactionException;
 import org.mini_lab.file_upload_service.file_upload.dto.FileMetadataResponseDTO;
 import org.mini_lab.file_upload_service.file_upload.dto.FileUploadCommand;
@@ -20,6 +21,7 @@ import org.springframework.transaction.CannotCreateTransactionException;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FileUploadService {
 
     private final FileUploadRequestExtractor fileUploadRequestExtractor;
@@ -32,6 +34,7 @@ public class FileUploadService {
     public FileMetadataResponseDTO processUploadFile(
             UploadRequestObjectDTO request
     ) {
+        log.info("PROCESS_UPLOAD_FILE");
         FileUploadCommand command =
                 fileUploadRequestExtractor.extract(request);
 
@@ -40,6 +43,7 @@ public class FileUploadService {
         FileMetadata metadata;
 
         try {
+            log.info("CREATE_UPLOADING_METADATA");
             metadata = fileMetadataCreationService.createUploadingMetadata(command);
         } catch (DataAccessException | TransactionException | CannotCreateTransactionException exception) {
             throw new InternalServerException();
@@ -48,6 +52,7 @@ public class FileUploadService {
         UploadObjectResult uploadResult;
 
         try {
+            log.info("UPLOADING_TO_OBJECTSTORAGE");
             uploadResult = objectStorageClient.upload(
                     metadata.getObjectKey(),
                     command
@@ -58,6 +63,7 @@ public class FileUploadService {
         }
 
         try {
+            log.info("METADATA_STATE_CHANGED to COMPLETED");
             fileMetadataStateManager.markCompleted(
                     metadata.getId(),
                     uploadResult.checksum()
@@ -78,12 +84,14 @@ public class FileUploadService {
             Exception originalException
     ) {
         try {
+            log.info("DELETING_OBJECT_IN_OBJECTSTORAGE");
             objectStorageClient.delete(metadata.getObjectKey());
         } catch (ObjectStorageException compensationException) {
             originalException.addSuppressed(compensationException);
         }
 
         try {
+            log.info("METADATA_STATE_CHANGED to FAILED");
             fileMetadataStateManager.markFailed(metadata.getId());
         } catch (Exception stateUpdateException) {
             originalException.addSuppressed(stateUpdateException);

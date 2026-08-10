@@ -1,13 +1,17 @@
 package org.mini_lab.file_upload_service.security.jwt.filter;
 
+import io.jsonwebtoken.JwtException;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.mini_lab.file_upload_service.security.jwt.dto.AccessTokenPayload;
 import org.mini_lab.file_upload_service.security.jwt.dto.AuthenticatedUser;
 import org.mini_lab.file_upload_service.security.jwt.service.JwtAccessTokenService;
+import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,11 +25,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";
@@ -36,8 +40,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 
     @Override
+    @WithSpan("jwt-authentication-filter-do-filter-internal")
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        log.info("CREATE JWT FILTER {}", System.identityHashCode(this));
 
+        log.info(
+                "JWT_FILTER method={} uri={} dispatcher={} trace={} auth={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                request.getDispatcherType(),
+                MDC.get("trace_id"),
+                request.getHeader(HttpHeaders.AUTHORIZATION) != null
+        );
         String authorization =
                 request.getHeader(HttpHeaders.AUTHORIZATION);
         if (authorization == null
@@ -49,7 +63,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 
         try {
-            Objects.requireNonNull(authorization);
             String accessToken = authorization
                     .substring(BEARER_PREFIX.length())
                     .trim();
@@ -74,7 +87,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             context.setAuthentication(authentication);
             SecurityContextHolder.setContext(context);
 
-        } catch (RuntimeException exception) {
+        } catch (NullPointerException | JwtException exception) {
             SecurityContextHolder.clearContext();
 
             AuthenticationException authenticationException =

@@ -59,6 +59,8 @@ security:
 logging:
   level:
     org:
+      springframework:
+        security: DEBUG
 server:
   tomcat:
     mbeanregistry:
