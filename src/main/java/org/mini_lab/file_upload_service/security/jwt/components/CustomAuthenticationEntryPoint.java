@@ -5,6 +5,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.mini_lab.file_upload_service.security.jwt.error_code.ErrorCode;
+import org.mini_lab.file_upload_service.shared.response.ApiError;
+import org.mini_lab.file_upload_service.shared.response.ApiResponse;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -19,20 +23,19 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
     private final ObjectMapper objectMapper;
 
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
+    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-        Map<String, Object> body = Map.of(
-                "status", 401,
-                "error", "UNAUTHORIZED",
-                "message", "Access token is missing or invalid",
-                "path", request.getRequestURI()
+        ApiError error = new ApiError(
+                ErrorCode.UNAUTHORIZED.name(),
+                ErrorCode.UNAUTHORIZED.getDefaultMessage()
         );
+
 
         objectMapper.writeValue(
                 response.getOutputStream(),
-                body
+                ApiResponse.failure(error )
         );
 
 
