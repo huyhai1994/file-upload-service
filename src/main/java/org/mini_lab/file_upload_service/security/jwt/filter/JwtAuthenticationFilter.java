@@ -12,6 +12,8 @@ import org.mini_lab.file_upload_service.security.jwt.dto.AccessTokenPayload;
 import org.mini_lab.file_upload_service.security.jwt.dto.AuthenticatedUser;
 import org.mini_lab.file_upload_service.security.jwt.service.JwtAccessTokenService;
 import org.slf4j.MDC;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,6 +32,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@Order(Ordered.HIGHEST_PRECEDENCE + 20)
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";
@@ -42,7 +45,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     @WithSpan("jwt-authentication-filter-do-filter-internal")
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        log.info("CREATE JWT FILTER {}", System.identityHashCode(this));
 
         log.info(
                 "JWT_FILTER method={} uri={} dispatcher={} trace={} auth={}",
