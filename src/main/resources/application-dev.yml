@@ -60,7 +60,9 @@ logging:
   level:
     org:
       springframework:
-        security: DEBUG
+        security:
+          web:
+            FilterChainProxy: TRACE
 server:
   tomcat:
     mbeanregistry:
