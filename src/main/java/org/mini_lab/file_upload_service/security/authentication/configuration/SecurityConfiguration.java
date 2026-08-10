@@ -1,6 +1,8 @@
 package org.mini_lab.file_upload_service.security.authentication.configuration;
 
 import org.mini_lab.file_upload_service.security.authentication.service.CustomUserDetailsManager;
+import org.mini_lab.file_upload_service.security.jwt.components.CustomAuthenticationEntryPoint;
+import org.mini_lab.file_upload_service.security.jwt.filter.JwtAuthenticationFilter;
 import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,9 +12,11 @@ import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 public class SecurityConfiguration {
@@ -44,17 +48,13 @@ public class SecurityConfiguration {
 
     @Bean
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity httpSecurity
+            HttpSecurity httpSecurity,
+            CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
+            JwtAuthenticationFilter jwtAuthenticationFilter
     ) {
 
         httpSecurity
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers(
-                                "/api/v1/auth/register",
-                                "/api/v1/auth/login"
-                        )
-                )
-                .httpBasic(Customizer.withDefaults())
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 EndpointRequest.to("health"),
@@ -64,8 +64,19 @@ public class SecurityConfiguration {
                                 "/api/v1/auth/register",
                                 "/api/v1/auth/login"
                         ).permitAll()
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
-                );
+                ).exceptionHandling(
+                        exception -> exception
+                                .authenticationEntryPoint(
+                                        customAuthenticationEntryPoint
+                                )
+                )
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
+        ;
 
         return httpSecurity.build();
     }
