@@ -1,6 +1,7 @@
 package org.mini_lab.file_upload_service.security.jwt.filter;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import io.prometheus.metrics.shaded.com_google_protobuf_4_34_0.DurationOrBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.security.authentication.dto.LoginResponse;
@@ -18,12 +19,19 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
+
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mini_lab.file_upload_service.support.MockUserBuilder.NORMALIZED_USERNAME;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,7 +43,10 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
 
     private static final String LOGIN_URL = "/api/v1/auth/login";
 
-    public static final String USERS_ME = "/api/v1/users/me";
+    public static final String PROTECTED_ENDPOINT = "/api/v1/users/me";
+
+    private static final Instant NOW =
+            Instant.parse("2026-08-11T02:00:00Z");
 
     @Autowired
     UserRepository userRepository;
@@ -49,10 +60,14 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     JacksonUtils jacksonUtils;
 
+    @MockitoBean
+    Clock clock;
 
     @BeforeEach
     void cleanUp() {
         userRepository.deleteAllInBatch();
+        when(clock.instant()).thenReturn(NOW);
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
     }
 
     @Test
@@ -61,7 +76,7 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
             throws Exception {
 
         mockMvc.perform(
-                        get(USERS_ME)
+                        get(PROTECTED_ENDPOINT)
                 )
                 .andExpect(status().isUnauthorized());
     }
@@ -69,18 +84,7 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
     @Test
     void performLogin_thenReturnAccessToken() throws Exception {
         persistAnValidUser();
-        MvcResult loginResult =
-                performLogin(NORMALIZED_USERNAME, MockPasswordBuilder.RAW_PASSWORD)
-                        .andExpect(status().isOk())
-                        .andReturn();
-
-        ApiResponse<LoginResponse> response =
-                jacksonUtils.convertFromJson(
-                        loginResult.getResponse().getContentAsString(),
-                        new TypeReference<>() {
-                        }
-                );
-        String accessToken = response.data().accessToken();
+        String accessToken = performLoginAndGetAccessToken();
         assertThat(accessToken).isNotNull();
 
     }
@@ -88,33 +92,67 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
     @Test
     void protectedEndpoint_whenAccessTokenIsValid_thenAuthenticateUser()
             throws Exception {
-
-        // Given
         persistAnValidUser();
+        String accessToken = performLoginAndGetAccessToken();
+        performProtectedRequest(accessToken).andExpect(status().isOk());
+    }
 
-        MvcResult loginResult =
-                performLogin(
-                        NORMALIZED_USERNAME,
-                        MockPasswordBuilder.RAW_PASSWORD
-                )
-                        .andExpect(status().isOk())
-                        .andReturn();
-
-        ApiResponse<LoginResponse> response =
-                jacksonUtils.convertFromJson(
-                        loginResult.getResponse().getContentAsString(),
-                        new TypeReference<>() {
-                        }
-                );
-        String accessToken = response.data().accessToken();
+    @Test
+    void protectedEndpoint_whenAccessTokenIsNull_thenReturnUnAuthorized() throws Exception {
         mockMvc.perform(
-                        get(USERS_ME)
+                        get(PROTECTED_ENDPOINT)
                                 .header(
                                         HttpHeaders.AUTHORIZATION,
-                                        "Bearer " + accessToken
+                                        "Bearer " + null
                                 )
                 )
-                .andExpect(status().isOk());
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void protectedEndpoint_whenInvalidSignature_thenReturnUnAuthorized() throws Exception {
+        persistAnValidUser();
+
+        String accessToken = performLoginAndGetAccessToken();
+        String tokenWithInvalidSignature = tamperSignature(accessToken);
+        performProtectedRequest(tokenWithInvalidSignature).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void protectedEndpoint_whenTokenExpired_thenReturnUnAuthorized() throws Exception {
+        persistAnValidUser();
+        when(clock.instant()).thenReturn(NOW.minus(Duration.ofHours(1)));
+
+        String expiredToken = performLoginAndGetAccessToken();
+        when(clock.instant()).thenReturn(NOW);
+        performProtectedRequest(expiredToken)
+                .andExpect(status().isUnauthorized());
+    }
+
+    private String tamperSignature(String token) {
+        String[] parts = token.split("\\.");
+
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("Invalid JWT");
+        }
+
+        String signature = parts[2];
+
+        char firstCharacter = signature.charAt(0);
+
+        char replacement =
+                firstCharacter == 'A'
+                        ? 'B'
+                        : 'A';
+
+        String tamperedSignature =
+                replacement + signature.substring(1);
+
+        return parts[0]
+                + "."
+                + parts[1]
+                + "."
+                + tamperedSignature;
     }
 
     private void persistAnValidUser() {
@@ -146,5 +184,33 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
                 """.formatted(username, password);
     }
 
+    private String performLoginAndGetAccessToken() throws Exception {
+        MvcResult loginResult =
+                performLogin(
+                        NORMALIZED_USERNAME,
+                        MockPasswordBuilder.RAW_PASSWORD
+                )
+                        .andExpect(status().isOk())
+                        .andReturn();
+
+        ApiResponse<LoginResponse> response =
+                jacksonUtils.convertFromJson(
+                        loginResult.getResponse().getContentAsString(),
+                        new TypeReference<>() {
+                        }
+                );
+        String accessToken = response.data().accessToken();
+        return accessToken;
+    }
+
+    private ResultActions performProtectedRequest(String accessToken) throws Exception {
+        return mockMvc.perform(
+                get(PROTECTED_ENDPOINT)
+                        .header(
+                                HttpHeaders.AUTHORIZATION,
+                                "Bearer " + accessToken
+                        )
+        );
+    }
 
 }
