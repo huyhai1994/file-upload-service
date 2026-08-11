@@ -2,7 +2,7 @@ package org.mini_lab.file_upload_service.component;
 
 import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.file_upload.shared.component.MimeTypeValidator;
-import org.mini_lab.file_upload_service.file_upload.exception.InvalidMimeTypeException;
+import org.mini_lab.file_upload_service.file_upload.shared.exception.InvalidMimeTypeException;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

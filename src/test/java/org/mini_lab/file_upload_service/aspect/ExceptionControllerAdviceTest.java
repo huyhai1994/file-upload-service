@@ -1,6 +1,7 @@
 package org.mini_lab.file_upload_service.aspect;
 
 import org.junit.jupiter.api.Test;
+import org.mini_lab.file_upload_service.file_upload.shared.exception.*;
 import org.mini_lab.file_upload_service.shared.response.ApiError;
 import org.mini_lab.file_upload_service.shared.response.ApiResponse;
 import org.mini_lab.file_upload_service.shared.aspect.ExceptionControllerAdvice;
@@ -10,7 +11,6 @@ import org.mini_lab.file_upload_service.security.authentication.register.excepti
 import org.mini_lab.file_upload_service.security.authentication.register.exception.PasswordTooShortException;
 import org.mini_lab.file_upload_service.security.authentication.register.exception.UsernameAlreadyExistsException;
 import org.mini_lab.file_upload_service.security.authentication.register.exception.UsernameLengthExceededException;
-import org.mini_lab.file_upload_service.file_upload.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaSystemException;

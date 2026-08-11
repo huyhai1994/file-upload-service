@@ -2,10 +2,10 @@ package org.mini_lab.file_upload_service.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mini_lab.file_upload_service.file_upload.dto.FileDownloadResource;
+import org.mini_lab.file_upload_service.file_upload.download.dto.FileDownloadResource;
 import org.mini_lab.file_upload_service.file_upload.shared.entity.FileMetadata;
-import org.mini_lab.file_upload_service.file_upload.exception.FileNotAvailableException;
-import org.mini_lab.file_upload_service.file_upload.exception.FileNotFoundException;
+import org.mini_lab.file_upload_service.file_upload.shared.exception.FileNotAvailableException;
+import org.mini_lab.file_upload_service.file_upload.shared.exception.FileNotFoundException;
 import org.mini_lab.file_upload_service.file_upload.shared.repository.FileMetadataRepository;
 import org.mini_lab.file_upload_service.file_upload.download.service.FileDownloadService;
 import org.mini_lab.file_upload_service.file_upload.shared.s3.ObjectStorageClient;

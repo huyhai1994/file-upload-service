@@ -5,7 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.shared.response.ApiError;
 import org.mini_lab.file_upload_service.shared.response.ApiResponse;
-import org.mini_lab.file_upload_service.file_upload.dto.FileMetadataResponseDTO;
+import org.mini_lab.file_upload_service.file_upload.upload.dto.FileMetadataResponseDTO;
 import org.mini_lab.file_upload_service.file_upload.shared.entity.FileState;
 import org.mini_lab.file_upload_service.file_upload.enums.ErrorCode;
 import org.mini_lab.file_upload_service.file_upload.shared.repository.FileMetadataRepository;

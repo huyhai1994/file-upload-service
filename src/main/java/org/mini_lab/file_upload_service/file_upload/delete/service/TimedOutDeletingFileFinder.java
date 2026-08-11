@@ -1,7 +1,7 @@
 package org.mini_lab.file_upload_service.file_upload.delete.service;
 
 import lombok.RequiredArgsConstructor;
-import org.mini_lab.file_upload_service.file_upload.configuration.FileDeleteRecoveryProperties;
+import org.mini_lab.file_upload_service.file_upload.shared.configuration.FileDeleteRecoveryProperties;
 import org.mini_lab.file_upload_service.file_upload.shared.entity.FileState;
 import org.mini_lab.file_upload_service.file_upload.shared.repository.FileMetadataRepository;
 import org.springframework.data.domain.PageRequest;

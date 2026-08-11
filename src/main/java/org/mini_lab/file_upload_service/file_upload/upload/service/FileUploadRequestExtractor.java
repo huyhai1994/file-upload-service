@@ -1,8 +1,8 @@
 package org.mini_lab.file_upload_service.file_upload.upload.service;
 
 import io.opentelemetry.instrumentation.annotations.WithSpan;
-import org.mini_lab.file_upload_service.file_upload.dto.FileUploadCommand;
-import org.mini_lab.file_upload_service.file_upload.dto.UploadRequestObjectDTO;
+import org.mini_lab.file_upload_service.file_upload.upload.dto.FileUploadCommand;
+import org.mini_lab.file_upload_service.file_upload.upload.dto.UploadRequestObjectDTO;
 import org.springframework.stereotype.Service;
 
 @Service

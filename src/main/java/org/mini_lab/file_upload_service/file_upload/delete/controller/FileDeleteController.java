@@ -3,7 +3,7 @@ package org.mini_lab.file_upload_service.file_upload.delete.controller;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.mini_lab.file_upload_service.shared.response.ApiResponse;
-import org.mini_lab.file_upload_service.file_upload.dto.FileDeleteResponseDTO;
+import org.mini_lab.file_upload_service.file_upload.delete.dto.FileDeleteResponseDTO;
 import org.mini_lab.file_upload_service.file_upload.delete.service.FileDeleteService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;

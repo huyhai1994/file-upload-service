@@ -2,7 +2,7 @@ package org.mini_lab.file_upload_service.controller;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mini_lab.file_upload_service.file_upload.dto.FileUploadCommand;
+import org.mini_lab.file_upload_service.file_upload.upload.dto.FileUploadCommand;
 import org.mini_lab.file_upload_service.file_upload.shared.entity.FileMetadata;
 import org.mini_lab.file_upload_service.file_upload.shared.entity.FileState;
 import org.mini_lab.file_upload_service.file_upload.shared.repository.FileMetadataRepository;

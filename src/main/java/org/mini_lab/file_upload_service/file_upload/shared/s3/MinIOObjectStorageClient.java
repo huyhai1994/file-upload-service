@@ -3,10 +3,10 @@ package org.mini_lab.file_upload_service.file_upload.shared.s3;
 import io.minio.*;
 import lombok.RequiredArgsConstructor;
 import org.mini_lab.file_upload_service.file_upload.shared.component.MessageDigestFactory;
-import org.mini_lab.file_upload_service.file_upload.configuration.MinioConfigProperties;
-import org.mini_lab.file_upload_service.file_upload.dto.FileUploadCommand;
-import org.mini_lab.file_upload_service.file_upload.dto.UploadObjectResult;
-import org.mini_lab.file_upload_service.file_upload.exception.ObjectStorageException;
+import org.mini_lab.file_upload_service.file_upload.shared.configuration.MinioConfigProperties;
+import org.mini_lab.file_upload_service.file_upload.upload.dto.FileUploadCommand;
+import org.mini_lab.file_upload_service.file_upload.upload.dto.UploadObjectResult;
+import org.mini_lab.file_upload_service.file_upload.shared.exception.ObjectStorageException;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;

@@ -2,8 +2,8 @@ package org.mini_lab.file_upload_service.component;
 
 import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.file_upload.shared.component.EmptyFileValidator;
-import org.mini_lab.file_upload_service.file_upload.dto.FileUploadCommand;
-import org.mini_lab.file_upload_service.file_upload.exception.EmptyFileException;
+import org.mini_lab.file_upload_service.file_upload.upload.dto.FileUploadCommand;
+import org.mini_lab.file_upload_service.file_upload.shared.exception.EmptyFileException;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;

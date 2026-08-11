@@ -3,11 +3,11 @@ package org.mini_lab.file_upload_service.file_upload.delete.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mini_lab.file_upload_service.file_upload.shared.entity.FileMetadata;
-import org.mini_lab.file_upload_service.file_upload.exception.FileNotFoundException;
-import org.mini_lab.file_upload_service.file_upload.exception.ObjectStorageException;
+import org.mini_lab.file_upload_service.file_upload.shared.exception.FileNotFoundException;
+import org.mini_lab.file_upload_service.file_upload.shared.exception.ObjectStorageException;
 import org.mini_lab.file_upload_service.file_upload.shared.repository.FileMetadataRepository;
 import org.mini_lab.file_upload_service.file_upload.shared.s3.ObjectStorageClient;
-import org.mini_lab.file_upload_service.file_upload.service.state_manager.FileMetadataStateManager;
+import org.mini_lab.file_upload_service.file_upload.upload.service.state_manager.FileMetadataStateManager;
 import org.springframework.stereotype.Service;
 
 @Service
