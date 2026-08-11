@@ -2,14 +2,14 @@
 
 ## 1 Document Information
 
-| Item | Value |
-|---|---|
-| Project | File Upload Service |
-| Module | Authentication |
-| Author | HaiNh |
-| Version | 1.0 |
-| Status | Draft |
-| Phase | Phase 1 |
+| Item    | Value               |     |
+| ------- | ------------------- | --- |
+| Project | File Upload Service |     |
+| Module  | Authentication      |     |
+| Author  | HaiNh               |     |
+| Version | 1.0                 |     |
+| Status  | Draft               |     |
+| Phase   | Phase 1             |     |
 
 ---
 
@@ -77,7 +77,7 @@ Tài liệu tập trung vào authentication. Việc quyết định người dù
   - `failedLoginCount = 0`.
   - `lockedUntil = null`.
 - Login endpoint được rate limit theo địa chỉ IP.
-- Phase 1 sử dụng rate limiter trong bộ nhớ vì ứng dụng chỉ chạy một instance.
+- Phase 1 sử dụng rate limiter bằng MySQL với cơ chế fixed window counter. phase sau sẽ dùng Redis để phù hợp hơn với bài toán rate limiting.
 
 #### 3.1.5 Xác thực request tới API được bảo vệ
 
@@ -158,21 +158,21 @@ Authorization: Bearer <access-token>
 
 ### 5.1 Authentication Strategy
 
-| Item                   | Decision                       |
-| ---------------------- | ------------------------------ |
-| Authentication model   | Stateless                      |
-| Access token           | JWT                            |
-| Password hashing       | BCrypt                         |
-| Access-token lifetime  | 15 phút                        |
-| JWT issuer             | `file-upload-service`          |
-| Transport              | HTTPS                          |
-| Access-token transport | `Authorization: Bearer` header |
-| HTTP session           | Không sử dụng                  |
-| Refresh token          | Không triển khai trong Phase 1 |
-| Logout phía server     | Không triển khai trong Phase 1 |
-| Rate limiter           | In-memory, theo IP             |
-| Account lock           | 5 lần sai, khóa 1 giờ          |
-| UserId Format          | UUID v4                        |
+| Item                   | Decision                                                                                  |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| Authentication model   | Stateless                                                                                 |
+| Access token           | JWT                                                                                       |
+| Password hashing       | BCrypt                                                                                    |
+| Access-token lifetime  | 15 phút                                                                                   |
+| JWT issuer             | `file-upload-service`                                                                     |
+| Transport              | HTTPS                                                                                     |
+| Access-token transport | `Authorization: Bearer` header                                                            |
+| HTTP session           | Không sử dụng                                                                             |
+| Refresh token          | Không triển khai trong Phase 1                                                            |
+| Logout phía server     | Không triển khai trong Phase 1                                                            |
+| Rate limiter           | In Memory Store / Redis , theo IP và user name + window (thuật toán fixed window counter) |
+| Account lock           | 5 lần sai, khóa 1 giờ                                                                     |
+| UserId Format          | UUID v4                                                                                   |
 
 ### 5.2 Spring Security Request Flow
 
@@ -492,7 +492,7 @@ User --> UserStatus
 #### 7.1.6 `LoginRateLimiter`
 
 - Giới hạn request login theo IP.
-- Counter được lưu trong memory trong Phase 1.
+- Counter được lưu trong MySQL trong Phase 1.
 
 ---
 
@@ -677,6 +677,8 @@ POST /api/v1/auth/login
 
 #### 8.2.3 Sequence Flow
 
+##### 8.2.3.1 Luồng login chính
+
 ```plantuml
 ```plantuml  
 @startuml  
@@ -743,6 +745,70 @@ end
 @enduml  
 ```
 
+##### 8.2.3.2 Luồng rate limiting
+
+- Trong Phase 1, lịch sử đăng nhập thất bại sẽ được lưu trong MySQL để triển khai và kiểm chứng luồng login rate limiting. Luồng như diagram bên dưới:
+
+```plantuml
+
+@startuml  
+  
+autonumber  
+  
+actor User as U  
+participant LoginRateLimitFilter as LRF  
+participant AuthenticationController as AC  
+participant ExceptionControllerAdvice as ECA  
+participant LoginAttemptService as LAS  
+participant AuthenticationService as AS  
+database "login_attempt" as DB  
+participant AuthenticationManager as AM  
+  
+U -> LRF: POST /api/v1/auth/login  
+LRF -> LRF: create loginKey\nhash(normalized username + client IP)  
+  
+LRF -> LAS: checkLimit(loginKey)  
+LAS -> DB: countFailuresWithinWindow(loginKey)  
+DB --> LAS: failureCount  
+LAS --> LRF: limit status  
+  
+alt Limit exceeded  
+    LRF -> LRF: throw TooManyRequestsException  
+    LRF --> ECA: exception propagated  
+    ECA --> U: 429 Too Many Requests  
+  
+else Limit not exceeded  
+    LRF -> AC: continue request  
+    AC -> AS: login(loginRequest, loginKey)  
+    AS -> AM: authenticate(authenticationToken)  
+  
+    alt Authentication failed  
+        AM --> AS: throw BadCredentialsException  
+  
+        AS -> LAS: recordFailure(loginKey)  
+        LAS -> DB: save failed attempt  
+  
+        AS --> AC: throw BadCredentialsException  
+        AC --> ECA: exception propagated  
+        ECA --> U: 401 Unauthorized  
+  
+    else Authentication successful  
+        AM --> AS: authenticated principal  
+  
+        AS -> LAS: clearFailures(loginKey)  
+        LAS -> DB: delete/reset failures  
+  
+        AS --> AC: LoginResponse(accessToken)  
+        AC --> U: 200 OK  
+    end  
+end  
+  
+@enduml
+```
+
+- Sang Phase 2, phần lưu trữ counter phục vụ rate limiting sẽ được chuyển sang Redis vì Redis phù hợp hơn với bài toán đếm theo thời gian nhờ hỗ trợ atomic counter và TTL.
+
+- Khi sử dụng MySQL, cần có scheduler hoặc cơ chế cleanup định kỳ để xóa các bản ghi login attempt đã hết hạn, tránh làm bảng dữ liệu và index tăng kích thước không cần thiết.
 #### 8.2.4 Error Handling
 | Case                         | Message                                    | HTTP Status | Exception                   | Error Code            |
 | ---------------------------- | ------------------------------------------ | ----------: | --------------------------- | --------------------- |
@@ -754,44 +820,8 @@ end
 | Account deleted              | Invalid username or password               |         401 | `AccountDeletedException`   | `INVALID_CREDENTIALS` |
 #### 8.2.5 Transaction Boundary
 
-Login không cần một transaction bao quanh toàn bộ authentication flow.
+#### 8.2.6 Concurrency
 
-Các cập nhật database được tách thành transaction ngắn:
-
-```text
-Login success:
-- Reset failedLoginCount
-- Clear lockedUntil
-
-Login failure:
-- Increment failedLoginCount atomically
-- Set lockedUntil when threshold reached
-```
-
-#### 8.2.4 Concurrency
-
-Hai login failure đồng thời có thể gây lost update:
-
-```text
-Thread A reads count = 3
-Thread B reads count = 3
-A writes 4
-B writes 4
-```
-
-Nên dùng atomic update:
-
-```sql
-UPDATE users
-SET failed_login_count = failed_login_count + 1,
-    locked_until =
-        CASE
-            WHEN failed_login_count + 1 >= 5
-            THEN :lockedUntil
-            ELSE locked_until
-        END
-WHERE id = :userId;
-```
 
 ---
 
@@ -878,17 +908,11 @@ CREATE TABLE users (
     username VARCHAR(100) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     status VARCHAR(30) NOT NULL,
-    failed_login_count INT NOT NULL DEFAULT 0,
-    locked_until DATETIME(6) NULL,
     created_at DATETIME(6) NOT NULL,
     updated_at DATETIME(6) NOT NULL,
 
     CONSTRAINT pk_users PRIMARY KEY (id),
     CONSTRAINT uk_users_username UNIQUE (username),
-    CONSTRAINT chk_users_failed_login_count
-        CHECK (failed_login_count >= 0),
-    CONSTRAINT chk_users_status
-        CHECK (status IN ('ACTIVE', 'DISABLED', 'DELETED'))
 );
 ```
 
@@ -904,9 +928,7 @@ CREATE TABLE users (
 SELECT id,
        username,
        password_hash,
-       status,
-       failed_login_count,
-       locked_until
+       status
 FROM users
 WHERE username = :username;
 ```
@@ -921,7 +943,27 @@ SELECT EXISTS (
 );
 ```
 
-### 11.3 Increment Failed Login Atomically
+
+### 11.3 Increment Login Attempt Atomically
+
+- Sử dụng native atomic upsert của MYSQL.
+
+
+```
+ INSERT INTO login_rate_limit (
+                        identity_hash,
+                        window_start,
+                        attempt_count
+                    )
+                    VALUES (
+                        :identityHash,
+                        :windowStart,
+                        1
+                    )
+                    ON DUPLICATE KEY UPDATE
+                        attempt_count = attempt_count + 1
+```
+### 11.4 Increment Failed Login Atomically
 
 ```sql
 UPDATE users
@@ -936,7 +978,7 @@ SET failed_login_count = failed_login_count + 1,
 WHERE id = :userId;
 ```
 
-### 11.4 Reset Failed Login
+### 11.5 Reset Failed Login
 
 ```sql
 UPDATE users
