@@ -1,16 +1,15 @@
 package org.mini_lab.file_upload_service.shared.aspect;
 
 import lombok.extern.slf4j.Slf4j;
-import org.mini_lab.file_upload_service.security.rate_limiter.entity.LoginRateLimit;
 import org.mini_lab.file_upload_service.security.rate_limiter.exceptions.LoginRateLimitExceededException;
 import org.mini_lab.file_upload_service.security.rate_limiter.exceptions.RateLimiterUnavailableException;
 import org.mini_lab.file_upload_service.shared.response.ApiError;
 import org.mini_lab.file_upload_service.shared.response.ApiResponse;
 import org.mini_lab.file_upload_service.file_upload.enums.ErrorCode;
-import org.mini_lab.file_upload_service.security.authentication.exception.PasswordLengthExceededException;
-import org.mini_lab.file_upload_service.security.authentication.exception.PasswordTooShortException;
-import org.mini_lab.file_upload_service.security.authentication.exception.UsernameAlreadyExistsException;
-import org.mini_lab.file_upload_service.security.authentication.exception.UsernameLengthExceededException;
+import org.mini_lab.file_upload_service.security.authentication.register.exception.PasswordLengthExceededException;
+import org.mini_lab.file_upload_service.security.authentication.register.exception.PasswordTooShortException;
+import org.mini_lab.file_upload_service.security.authentication.register.exception.UsernameAlreadyExistsException;
+import org.mini_lab.file_upload_service.security.authentication.register.exception.UsernameLengthExceededException;
 import org.mini_lab.file_upload_service.file_upload.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

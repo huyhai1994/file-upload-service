@@ -2,9 +2,9 @@ package org.mini_lab.file_upload_service.service.security;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.mini_lab.file_upload_service.security.authentication.entity.User;
-import org.mini_lab.file_upload_service.security.authentication.repository.UserRepository;
-import org.mini_lab.file_upload_service.security.authentication.service.CustomUserDetailsManager;
+import org.mini_lab.file_upload_service.security.authentication.shared.entity.User;
+import org.mini_lab.file_upload_service.security.authentication.shared.repository.UserRepository;
+import org.mini_lab.file_upload_service.security.authentication.register.service.CustomUserDetailsManager;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

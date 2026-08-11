@@ -1,12 +1,11 @@
 package org.mini_lab.file_upload_service.security.jwt.filter;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import io.prometheus.metrics.shaded.com_google_protobuf_4_34_0.DurationOrBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mini_lab.file_upload_service.security.authentication.dto.LoginResponse;
-import org.mini_lab.file_upload_service.security.authentication.entity.User;
-import org.mini_lab.file_upload_service.security.authentication.repository.UserRepository;
+import org.mini_lab.file_upload_service.security.authentication.login.dto.LoginResponse;
+import org.mini_lab.file_upload_service.security.authentication.shared.entity.User;
+import org.mini_lab.file_upload_service.security.authentication.shared.repository.UserRepository;
 import org.mini_lab.file_upload_service.shared.json.JacksonUtils;
 import org.mini_lab.file_upload_service.shared.response.ApiResponse;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;

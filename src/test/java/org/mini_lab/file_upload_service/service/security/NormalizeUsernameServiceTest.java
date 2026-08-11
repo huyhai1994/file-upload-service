@@ -1,7 +1,7 @@
 package org.mini_lab.file_upload_service.service.security;
 
 import org.junit.jupiter.api.Test;
-import org.mini_lab.file_upload_service.security.authentication.service.NormalizeUsernameService;
+import org.mini_lab.file_upload_service.security.authentication.shared.service.NormalizeUsernameService;
 
 import static org.junit.jupiter.api.Assertions.*;
 

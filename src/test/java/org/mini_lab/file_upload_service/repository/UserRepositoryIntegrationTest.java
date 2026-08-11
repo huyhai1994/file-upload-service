@@ -2,8 +2,8 @@ package org.mini_lab.file_upload_service.repository;
 
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
-import org.mini_lab.file_upload_service.security.authentication.entity.User;
-import org.mini_lab.file_upload_service.security.authentication.repository.UserRepository;
+import org.mini_lab.file_upload_service.security.authentication.shared.entity.User;
+import org.mini_lab.file_upload_service.security.authentication.shared.repository.UserRepository;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;

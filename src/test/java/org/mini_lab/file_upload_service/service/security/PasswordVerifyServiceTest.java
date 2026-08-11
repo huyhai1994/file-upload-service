@@ -1,9 +1,9 @@
 package org.mini_lab.file_upload_service.service.security;
 
 import org.junit.jupiter.api.Test;
-import org.mini_lab.file_upload_service.security.authentication.exception.PasswordLengthExceededException;
-import org.mini_lab.file_upload_service.security.authentication.exception.PasswordTooShortException;
-import org.mini_lab.file_upload_service.security.authentication.service.PasswordVerifyService;
+import org.mini_lab.file_upload_service.security.authentication.register.exception.PasswordLengthExceededException;
+import org.mini_lab.file_upload_service.security.authentication.register.exception.PasswordTooShortException;
+import org.mini_lab.file_upload_service.security.authentication.shared.service.PasswordVerifyService;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;

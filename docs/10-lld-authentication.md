@@ -455,7 +455,7 @@ User --> UserStatus
 
 ### 7.1 Main Components
 
-#### 7.1.1 `AuthenticationService`
+#### 7.1.1 `UserAccountRegisterService`
 
 - Đăng ký tài khoản.
 - Điều phối login.

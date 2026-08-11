@@ -1,6 +1,6 @@
 package org.mini_lab.file_upload_service.shared.configuration;
 
-import org.mini_lab.file_upload_service.security.authentication.service.CustomUserDetailsManager;
+import org.mini_lab.file_upload_service.security.authentication.register.service.CustomUserDetailsManager;
 import org.mini_lab.file_upload_service.security.jwt.components.CustomAuthenticationEntryPoint;
 import org.mini_lab.file_upload_service.security.jwt.filter.JwtAuthenticationFilter;
 import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
