@@ -61,7 +61,7 @@ security:
   identity-hash:
     secret-key: eWeHbeT1wLynBeNl/odFQUTNONHIPXyNTd6la4puAdc=
 login-rate-limit:
-  username-ip-max-attempts: 5
+  username-ip-max-attempts: 10
   window-duration: 1m
 login-attempt:
   failure-attempts: 5

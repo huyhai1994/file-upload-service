@@ -32,10 +32,10 @@ class MySqlLoginRateLimitServiceIntegrationTest extends AbstractIntegrationTest 
     }
 
     @Test
-    void allow_whenTenRequestsLoginConcurency_thenReturnFalse() throws ExecutionException, InterruptedException, TimeoutException {
+    void allow_whenEleventRequestsLoginConcurency_thenReturnFalse() throws ExecutionException, InterruptedException, TimeoutException {
 
-        int concurrentRequestCount = 10;
-        int maxAttempts = 5;
+        int concurrentRequestCount = 11;
+        int maxAttempts = 10;
 
 
         try (RaceConditionSimulator simulator =

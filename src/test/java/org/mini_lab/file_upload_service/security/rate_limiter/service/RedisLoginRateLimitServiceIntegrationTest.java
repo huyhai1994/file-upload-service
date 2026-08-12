@@ -26,7 +26,7 @@ class RedisLoginRateLimitServiceIntegrationTest
     RedisLoginRateLimitService service;
 
     @Test
-    void allow_whenTenConcurrentRequests_thenAllowOnlyFive()
+    void allow_whenEleventConcurrentRequests_thenAllowOnlyTen()
             throws Exception {
 
         String identity =
@@ -34,22 +34,22 @@ class RedisLoginRateLimitServiceIntegrationTest
 
         try (RaceConditionSimulator simulator =
                      RaceConditionSimulator
-                             .getRaceConditionSimulator(10)) {
+                             .getRaceConditionSimulator(11)) {
 
             List<Boolean> results = simulator.execute(
                     () -> service.allow(identity)
             );
 
             assertThat(results)
-                    .hasSize(10);
+                    .hasSize(11);
 
             assertThat(results)
                     .filteredOn(Boolean.TRUE::equals)
-                    .hasSize(5);
+                    .hasSize(10);
 
             assertThat(results)
                     .filteredOn(Boolean.FALSE::equals)
-                    .hasSize(5);
+                    .hasSize(1);
         }
     }
 
