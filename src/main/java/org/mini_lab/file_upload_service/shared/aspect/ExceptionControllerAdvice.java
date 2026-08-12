@@ -2,11 +2,12 @@ package org.mini_lab.file_upload_service.shared.aspect;
 
 import lombok.extern.slf4j.Slf4j;
 import org.mini_lab.file_upload_service.file_upload.shared.exception.*;
+import org.mini_lab.file_upload_service.security.authentication.login.exception.UserAccountLockedException;
 import org.mini_lab.file_upload_service.security.rate_limiter.exceptions.LoginRateLimitExceededException;
 import org.mini_lab.file_upload_service.security.rate_limiter.exceptions.RateLimiterUnavailableException;
 import org.mini_lab.file_upload_service.shared.response.ApiError;
 import org.mini_lab.file_upload_service.shared.response.ApiResponse;
-import org.mini_lab.file_upload_service.file_upload.enums.ErrorCode;
+import org.mini_lab.file_upload_service.shared.error_code.ErrorCode;
 import org.mini_lab.file_upload_service.security.authentication.register.exception.PasswordLengthExceededException;
 import org.mini_lab.file_upload_service.security.authentication.register.exception.PasswordTooShortException;
 import org.mini_lab.file_upload_service.security.authentication.register.exception.UsernameAlreadyExistsException;
@@ -199,6 +200,16 @@ public class ExceptionControllerAdvice {
         return buildErrorResponse(
                 HttpStatus.TOO_MANY_REQUESTS,
                 ErrorCode.TOO_MANY_REQUESTS
+        );
+    }
+
+    @ExceptionHandler(UserAccountLockedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUserAccountLocked(
+            UserAccountLockedException exception
+    ) {
+        return buildErrorResponse(
+                HttpStatus.LOCKED,
+                ErrorCode.USER_ACCOUNT_LOCKED
         );
     }
 }

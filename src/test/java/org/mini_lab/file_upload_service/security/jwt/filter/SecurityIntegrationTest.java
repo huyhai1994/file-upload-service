@@ -1,15 +1,20 @@
 package org.mini_lab.file_upload_service.security.jwt.filter;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.security.authentication.login.dto.LoginResponse;
 import org.mini_lab.file_upload_service.security.authentication.shared.entity.User;
 import org.mini_lab.file_upload_service.security.authentication.shared.repository.UserRepository;
+import org.mini_lab.file_upload_service.shared.error_code.ErrorCode;
 import org.mini_lab.file_upload_service.shared.json.JacksonUtils;
+import org.mini_lab.file_upload_service.shared.response.ApiError;
 import org.mini_lab.file_upload_service.shared.response.ApiResponse;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.mini_lab.file_upload_service.support.MockPasswordBuilder;
+import org.mini_lab.file_upload_service.support.RaceConditionSimulator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -23,18 +28,23 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 
+import java.io.UnsupportedEncodingException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mini_lab.file_upload_service.support.MockUserBuilder.NORMALIZED_USERNAME;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Slf4j
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
@@ -78,6 +88,65 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
                         get(PROTECTED_ENDPOINT)
                 )
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void login_whenAfter5FailedRequest_thenNextRequestWillBeLocked() throws Exception {
+
+        persistAnValidUser();
+        User persistedUser = userRepository
+                .findByUsername(NORMALIZED_USERNAME)
+                .orElseThrow();
+
+        assertThat(persistedUser.getFailedLoginCount()).isEqualTo(0);
+        assertThat(persistedUser.getLockedUntil()).isNull();
+
+
+        try (RaceConditionSimulator raceConditionSimulator = RaceConditionSimulator.getRaceConditionSimulator(5)) {
+
+            List<ResultActions> resultActions = raceConditionSimulator.execute(() -> performLogin(
+                    NORMALIZED_USERNAME,
+                    MockPasswordBuilder.WRONG_PASSWORD
+            ));
+
+            List<String> code = resultActions
+                    .stream()
+                    .map(ResultActions::andReturn)
+                    .map(r -> {
+                        try {
+                            return r.getResponse().getContentAsString();
+                        } catch (UnsupportedEncodingException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }).map(str -> {
+                                try {
+                                    return jacksonUtils.convertFromJson(str, new TypeReference<ApiResponse<LoginResponse>>() {
+                                    });
+                                } catch (JsonProcessingException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                    ).map(ApiResponse::error)
+                    .map(ApiError::code)
+                    .toList();
+
+            assertThat(code)
+                    .containsExactlyInAnyOrder(
+                            ErrorCode.INVALID_CREDENTIALS.name(),
+                            ErrorCode.INVALID_CREDENTIALS.name(),
+                            ErrorCode.INVALID_CREDENTIALS.name(),
+                            ErrorCode.INVALID_CREDENTIALS.name(),
+                            ErrorCode.INVALID_CREDENTIALS.name()
+                    );
+
+        }
+        User lockedUser = userRepository.findByUsername(NORMALIZED_USERNAME).orElseThrow();
+
+        performLogin(NORMALIZED_USERNAME, MockPasswordBuilder.WRONG_PASSWORD).andExpect(status().isLocked());
+
+        assertThat(lockedUser.getFailedLoginCount()).isEqualTo(5);
+        assertThat(lockedUser.getLockedUntil()).isNotNull();
+
     }
 
     @Test
@@ -198,8 +267,7 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
                         new TypeReference<>() {
                         }
                 );
-        String accessToken = response.data().accessToken();
-        return accessToken;
+        return response.data().accessToken();
     }
 
     private ResultActions performProtectedRequest(String accessToken) throws Exception {

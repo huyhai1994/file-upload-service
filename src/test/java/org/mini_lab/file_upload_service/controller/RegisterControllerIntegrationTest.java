@@ -4,7 +4,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.security.authentication.shared.entity.User;
-import org.mini_lab.file_upload_service.file_upload.enums.ErrorCode;
+import org.mini_lab.file_upload_service.shared.error_code.ErrorCode;
 import org.mini_lab.file_upload_service.security.authentication.shared.repository.UserRepository;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.mini_lab.file_upload_service.support.RaceConditionSimulator;

@@ -7,7 +7,7 @@ import org.mini_lab.file_upload_service.shared.response.ApiError;
 import org.mini_lab.file_upload_service.shared.response.ApiResponse;
 import org.mini_lab.file_upload_service.file_upload.upload.dto.FileMetadataResponseDTO;
 import org.mini_lab.file_upload_service.file_upload.shared.entity.FileState;
-import org.mini_lab.file_upload_service.file_upload.enums.ErrorCode;
+import org.mini_lab.file_upload_service.shared.error_code.ErrorCode;
 import org.mini_lab.file_upload_service.file_upload.shared.repository.FileMetadataRepository;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.mini_lab.file_upload_service.support.MockObjectBuilder;

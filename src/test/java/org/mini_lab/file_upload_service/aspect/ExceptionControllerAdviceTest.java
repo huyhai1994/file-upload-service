@@ -6,7 +6,7 @@ import org.mini_lab.file_upload_service.shared.response.ApiError;
 import org.mini_lab.file_upload_service.shared.response.ApiResponse;
 import org.mini_lab.file_upload_service.shared.aspect.ExceptionControllerAdvice;
 import org.mini_lab.file_upload_service.file_upload.shared.entity.FileState;
-import org.mini_lab.file_upload_service.file_upload.enums.ErrorCode;
+import org.mini_lab.file_upload_service.shared.error_code.ErrorCode;
 import org.mini_lab.file_upload_service.security.authentication.register.exception.PasswordLengthExceededException;
 import org.mini_lab.file_upload_service.security.authentication.register.exception.PasswordTooShortException;
 import org.mini_lab.file_upload_service.security.authentication.register.exception.UsernameAlreadyExistsException;

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.file_upload.upload.dto.FileMetadataResponseDTO;
 import org.mini_lab.file_upload_service.file_upload.upload.dto.UploadRequestObjectDTO;
 import org.mini_lab.file_upload_service.file_upload.shared.entity.FileMetadata;
-import org.mini_lab.file_upload_service.file_upload.enums.ErrorCode;
+import org.mini_lab.file_upload_service.shared.error_code.ErrorCode;
 import org.mini_lab.file_upload_service.file_upload.shared.repository.FileMetadataRepository;
 import org.mini_lab.file_upload_service.file_upload.upload.service.FileUploadService;
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;

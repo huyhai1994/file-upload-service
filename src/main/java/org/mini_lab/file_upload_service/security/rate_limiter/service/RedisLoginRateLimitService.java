@@ -3,7 +3,7 @@ package org.mini_lab.file_upload_service.security.rate_limiter.service;
 
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
-import org.mini_lab.file_upload_service.file_upload.enums.ErrorCode;
+import org.mini_lab.file_upload_service.shared.error_code.ErrorCode;
 import org.mini_lab.file_upload_service.security.rate_limiter.component.CalculateWindowStarter;
 import org.mini_lab.file_upload_service.security.rate_limiter.component.KeyGenerator;
 import org.mini_lab.file_upload_service.security.rate_limiter.component.RateLimitValidator;
