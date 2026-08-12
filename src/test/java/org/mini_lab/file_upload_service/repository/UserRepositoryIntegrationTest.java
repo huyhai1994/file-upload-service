@@ -128,6 +128,7 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
     @Test
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void recordLoginFailedCount_when6ConcurrentLoginRequestFailed_thenAccountIsLockedAndUpdateLockedUntil() throws ExecutionException, InterruptedException, TimeoutException {
+
         persistUser(MockUserBuilder.NORMALIZED_USERNAME);
 
         User persistedUser = userRepository
@@ -144,7 +145,7 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
                     () -> transactionTemplate.execute(
                             status ->
                                     userRepository
-                                            .recordLoginFailedCount(
+                                            .recordLoginFailureCount(
                                                     uuid,
                                                     LocalDateTime.now(clock).plusHours(1),
                                                     5,
@@ -173,6 +174,33 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
         userRepository.deleteAllInBatch();
     }
 
+    @Test
+    void resetFailureCount_whenFailureCountBiggerThan0_thenResetTo0AndFailedLoginCountIsNull() {
+        persistLockedUser(MockUserBuilder.NORMALIZED_USERNAME);
+        User persistLockedUser = userRepository
+                .findAll()
+                .stream()
+                .findFirst()
+                .orElseThrow();
+        UUID uuid = persistLockedUser.getId();
+        assertThat(userRepository.resetFailureCount(uuid)).isOne();
+
+        entityManager.flush();
+        entityManager.clear();
+
+        int totalUser = Math.toIntExact(userRepository.findAll().size());
+        assertThat(totalUser).isOne();
+
+        User resetLockedUser = userRepository
+                .findAll()
+                .stream()
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(resetLockedUser.getLockedUntil()).isNull();
+        assertThat(resetLockedUser.getFailedLoginCount()).isZero();
+    }
+
 
     private void persistUser(String username) {
 
@@ -191,6 +219,7 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
                         passwordEncoder.encode("passwordHash")
                 );
         lockedUser.setLockedUntil(LocalDateTime.now(clock).plusHours(1));
+        lockedUser.setFailedLoginCount(5);
 
         userRepository.saveAndFlush(lockedUser);
     }

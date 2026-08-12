@@ -31,9 +31,18 @@ public interface UserRepository extends JpaRepository<User, UUID> {
                                 u.updatedAt = :now
                     where u.id = :userId
             """)
-    int recordLoginFailedCount(@Param("userId") UUID userId,
-                               @Param("lockedUtil") LocalDateTime lockedUntil,
-                               @Param("maxAttemptCount") Integer maxAttemptCounts,
-                               @Param("now") LocalDateTime now);
+    int recordLoginFailureCount(@Param("userId") UUID userId,
+                                @Param("lockedUtil") LocalDateTime lockedUntil,
+                                @Param("maxAttemptCount") Integer maxAttemptCounts,
+                                @Param("now") LocalDateTime now);
+
+    @Modifying
+    @Query("""
+                    update User u
+                    set u.failedLoginCount = 0 ,
+                        u.lockedUntil  = null 
+                    where u.id = :userId
+            """)
+    int resetFailureCount(@Param("userId") UUID userId);
 
 }
