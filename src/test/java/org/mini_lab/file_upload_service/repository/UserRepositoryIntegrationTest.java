@@ -26,7 +26,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -66,14 +65,12 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
     @Test
     void existsByUsername_whenUsernameExists_thenReturnTrue() {
 
-        String username = "test-user";
-
-        persistUser(username);
+        persistUser();
 
         entityManager.clear();
 
         assertTrue(
-                userRepository.existsByUsername(username)
+                userRepository.existsByUsername(MockUserBuilder.NORMALIZED_USERNAME)
         );
     }
 
@@ -87,21 +84,21 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void saveAndFlush_whenPersistExistedUsername_thenThrowException() {
-        persistUser(MockUserBuilder.NORMALIZED_USERNAME);
+        persistUser();
         assertThrows(DataIntegrityViolationException.class,
-                () -> persistUser(MockUserBuilder.NORMALIZED_USERNAME));
+                this::persistUser);
     }
 
     @Test
     void existsByUsernameAndLockedUntilIsNotNull_whenUserAccountNotLocked_thenLockUntilIsNull() {
-        persistUser(MockUserBuilder.NORMALIZED_USERNAME);
+        persistUser();
         assertThat(userRepository.existsByUsernameAndLockedUntilIsNotNull(MockUserBuilder.NORMALIZED_USERNAME)).isFalse();
     }
 
     @Test
     void existsByUsernameAndLockedUntilIsNotNull_whenUserAccountLocked_thenLockUntilIsNotNull() {
 
-        persistLockedUser(MockUserBuilder.NORMALIZED_USERNAME);
+        persistLockedUser();
 
         assertThat(
                 userRepository
@@ -129,7 +126,7 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void recordLoginFailedCount_when6ConcurrentLoginRequestFailed_thenAccountIsLockedAndUpdateLockedUntil() throws ExecutionException, InterruptedException, TimeoutException {
 
-        persistUser(MockUserBuilder.NORMALIZED_USERNAME);
+        persistUser();
 
         User persistedUser = userRepository
                 .findAll()
@@ -137,7 +134,7 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
                 .findFirst()
                 .orElseThrow();
 
-        UUID uuid = persistedUser.getId();
+        String username = persistedUser.getUsername();
 
         try (RaceConditionSimulator raceConditionSimulator =
                      RaceConditionSimulator.getRaceConditionSimulator(6)) {
@@ -146,7 +143,7 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
                             status ->
                                     userRepository
                                             .recordLoginFailureCount(
-                                                    uuid,
+                                                    username,
                                                     LocalDateTime.now(clock).plusHours(1),
                                                     5,
                                                     LocalDateTime.now(clock))
@@ -176,14 +173,14 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void resetFailureCount_whenFailureCountBiggerThan0_thenResetTo0AndFailedLoginCountIsNull() {
-        persistLockedUser(MockUserBuilder.NORMALIZED_USERNAME);
+        persistLockedUser();
         User persistLockedUser = userRepository
                 .findAll()
                 .stream()
                 .findFirst()
                 .orElseThrow();
-        UUID uuid = persistLockedUser.getId();
-        assertThat(userRepository.resetFailureCount(uuid)).isOne();
+        String username = persistLockedUser.getUsername();
+        assertThat(userRepository.resetFailureCount(username, LocalDateTime.now(clock))).isOne();
 
         entityManager.flush();
         entityManager.clear();
@@ -202,20 +199,20 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
     }
 
 
-    private void persistUser(String username) {
+    private void persistUser() {
 
         userRepository.saveAndFlush(
                 new User(
-                        username,
+                        MockUserBuilder.NORMALIZED_USERNAME,
                         passwordEncoder.encode("passwordHash")
                 )
         );
     }
 
-    private void persistLockedUser(String username) {
+    private void persistLockedUser() {
         User lockedUser =
                 new User(
-                        username,
+                        MockUserBuilder.NORMALIZED_USERNAME,
                         passwordEncoder.encode("passwordHash")
                 );
         lockedUser.setLockedUntil(LocalDateTime.now(clock).plusHours(1));

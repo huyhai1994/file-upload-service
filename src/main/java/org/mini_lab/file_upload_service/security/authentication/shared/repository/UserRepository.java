@@ -29,9 +29,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
                                                 else u.lockedUntil
                                             end),
                                 u.updatedAt = :now
-                    where u.id = :userId
+                    where u.username = :username
             """)
-    int recordLoginFailureCount(@Param("userId") UUID userId,
+    int recordLoginFailureCount(@Param("username") String username,
                                 @Param("lockedUtil") LocalDateTime lockedUntil,
                                 @Param("maxAttemptCount") Integer maxAttemptCounts,
                                 @Param("now") LocalDateTime now);
@@ -40,9 +40,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("""
                     update User u
                     set u.failedLoginCount = 0 ,
-                        u.lockedUntil  = null 
-                    where u.id = :userId
+                        u.lockedUntil  = null ,
+                        u.updatedAt = :now
+                    where u.username = :username
             """)
-    int resetFailureCount(@Param("userId") UUID userId);
+    int resetFailureCount(@Param("username") String username,
+                          @Param("now") LocalDateTime now);
 
 }
