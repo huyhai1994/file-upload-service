@@ -35,9 +35,9 @@ public class LoginAttemptService {
         userRepository.resetFailureCount(username, now);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public boolean checkLock(String username) {
         Objects.requireNonNull(username);
-        return Boolean.TRUE.equals(userRepository.existsByUsernameAndLockedUntilIsNotNull(username));
+        return userRepository.existsByUsernameAndLockedUntilIsNotNull(username);
     }
 }

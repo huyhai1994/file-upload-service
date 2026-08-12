@@ -1,7 +1,7 @@
 package org.mini_lab.file_upload_service.security.authentication.register.service;
 
 import lombok.RequiredArgsConstructor;
-import org.mini_lab.file_upload_service.file_upload.enums.ErrorCode;
+import org.mini_lab.file_upload_service.shared.error_code.ErrorCode;
 import org.mini_lab.file_upload_service.security.authentication.register.exception.UsernameAlreadyExistsException;
 import org.mini_lab.file_upload_service.security.authentication.register.exception.UsernameLengthExceededException;
 import org.mini_lab.file_upload_service.security.authentication.shared.repository.UserRepository;

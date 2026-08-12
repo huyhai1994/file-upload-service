@@ -70,3 +70,6 @@ server:
 login-rate-limit:
   username-ip-max-attempts: 5
   window-duration: 1m
+login-attempt:
+  failure-attempts: 5
+  lock-duration: 60m

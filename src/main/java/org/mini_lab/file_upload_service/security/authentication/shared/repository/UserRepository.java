@@ -1,7 +1,9 @@
 package org.mini_lab.file_upload_service.security.authentication.shared.repository;
 
+import jakarta.persistence.LockModeType;
 import org.mini_lab.file_upload_service.security.authentication.shared.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,7 +26,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
                     set u.failedLoginCount = u.failedLoginCount + 1,
                                 u.lockedUntil = (
                                             case 
-                                                when u.failedLoginCount + 1 >= :maxAttemptCount
+                                                when u.failedLoginCount + 1 > :maxAttemptCount
                                                  then :lockedUtil
                                                 else u.lockedUntil
                                             end),

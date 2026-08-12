@@ -1,8 +1,7 @@
-package org.mini_lab.file_upload_service.file_upload.enums;
+package org.mini_lab.file_upload_service.shared.error_code;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.mini_lab.file_upload_service.security.rate_limiter.exceptions.RateLimiterUnavailableException;
 
 @Getter
 @RequiredArgsConstructor
@@ -42,7 +41,10 @@ public enum ErrorCode {
     TOO_MANY_REQUESTS("Too Many Requests"),
 
     // Rate limiter
-    Rate_LIMITER_UNAVAILABLE("Redis rate limiter is unavailable");
+    Rate_LIMITER_UNAVAILABLE("Redis rate limiter is unavailable"),
+
+    // Login
+    USER_ACCOUNT_LOCKED("User account is temporarily locked due to multiple failed login attempts");
 
     private final String defaultMessage;
 }

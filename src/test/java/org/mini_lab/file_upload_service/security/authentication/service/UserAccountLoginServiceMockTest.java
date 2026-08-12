@@ -2,9 +2,10 @@ package org.mini_lab.file_upload_service.security.authentication.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mini_lab.file_upload_service.file_upload.enums.ErrorCode;
+import org.mini_lab.file_upload_service.shared.error_code.ErrorCode;
 import org.mini_lab.file_upload_service.security.authentication.login.dto.LoginRequest;
 import org.mini_lab.file_upload_service.security.authentication.login.dto.LoginResponse;
+import org.mini_lab.file_upload_service.security.authentication.login.service.LoginAttemptService;
 import org.mini_lab.file_upload_service.security.authentication.login.service.UserAccountLoginService;
 import org.mini_lab.file_upload_service.security.authentication.shared.service.NormalizeUsernameService;
 import org.mini_lab.file_upload_service.security.jwt.service.JwtAccessTokenService;
@@ -34,6 +35,9 @@ class UserAccountLoginServiceMockTest {
     UserAccountLoginService userAccountLoginService;
 
     @Mock
+    LoginAttemptService loginAttemptService;
+
+    @Mock
     private NormalizeUsernameService normalizeUsernameService;
 
     @Mock
@@ -50,7 +54,10 @@ class UserAccountLoginServiceMockTest {
 
     @Test
     void login_whenLoginRequestValid_thenAuthenticateAndReturnLoginResponse() {
-        when(normalizeUsernameService.normalizeUsername(DEFAULT_USERNAME)).thenReturn(NORMALIZED_USERNAME);
+        when(normalizeUsernameService.normalizeUsername(DEFAULT_USERNAME))
+                .thenReturn(NORMALIZED_USERNAME);
+        when(loginAttemptService.checkLock(NORMALIZED_USERNAME))
+                .thenReturn(Boolean.FALSE);
 
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
         when(jwtAccessTokenService.generateAccessToken(any(UserDetails.class))).thenReturn(ACCESS_TOKEN);
@@ -72,6 +79,7 @@ class UserAccountLoginServiceMockTest {
     void login_whenBadCredentials_thenThrowBadCredentialsExceptionAndNotGenerateToken() {
         when(normalizeUsernameService.normalizeUsername(DEFAULT_USERNAME))
                 .thenReturn(NORMALIZED_USERNAME);
+        when(loginAttemptService.checkLock(NORMALIZED_USERNAME)).thenReturn(Boolean.FALSE);
 
         when(authenticationManager.authenticate(
                 any(UsernamePasswordAuthenticationToken.class)
