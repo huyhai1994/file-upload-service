@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
 
-@ConfigurationProperties(prefix = "login-rate-limit")
+@ConfigurationProperties(prefix = "security.login-rate-limit")
 @Getter
 @Setter
 public class LoginRateLimitProperties {

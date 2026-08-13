@@ -77,7 +77,7 @@ Tài liệu tập trung vào authentication. Việc quyết định người dù
   - `failedLoginCount = 0`.
   - `lockedUntil = null`.
 - Login endpoint được rate limit theo địa chỉ IP.
-- Phase 1 sử dụng rate limiter bằng MySQL với cơ chế fixed window counter. phase sau sẽ dùng Redis để phù hợp hơn với bài toán rate limiting.
+- Sử dụng rate limiter bằng Redis với cơ chế fixed window counter.
 
 #### 3.1.5 Xác thực request tới API được bảo vệ
 
@@ -119,13 +119,13 @@ Authorization: Bearer <access-token>
 - Username phải được chuẩn hóa về lowercase.
 - Username phải duy nhất trong cơ sở dữ liệu.
 - Password phải được hash trước khi lưu.
-- Hệ thống không được lưu hoặc log plaintext password.
+- Hệ thống không được lưu hoặc log password theo dạng text nhìn thấy được.
 
 ### 4.2 CR-02 — Đăng nhập
 
 - Hệ thống phải xác thực username và password.
-- Hệ thống không được tiết lộ username có tồn tại hay không qua thông báo lỗi.
-- Hệ thống phải từ chối tài khoản bị disable hoặc đang bị khóa.
+- Hệ thống không được tiết lộ username có tồn tại hay không qua thông báo lỗi. Sẽ báo lỗi chung chung là password hoặc username không tồn tại.
+- Hệ thống phải từ chối tài khoản  đang bị khóa.
 - Đăng nhập thành công phải trả về JWT access token.
 - Đăng nhập thành công phải reset trạng thái login failure.
 
@@ -143,6 +143,7 @@ Authorization: Bearer <access-token>
 - Sau lần sai thứ 5, hệ thống phải thiết lập `lockedUntil = now + 1 hour`.
 - Việc tăng failure count phải tránh lost update khi có nhiều request đồng thời.
 - Login endpoint phải trả `429 Too Many Requests` khi vượt rate limit.
+- Khi người dùng login vào thời điểm vượt qua thời gian `lockedUtil`, thì khóa sẽ hết hiệu lực. Nếu đăng nhập thất bại hệ thống sẽ reset laị `failedLoginCount` và `lockedUtil`. Và bắt đầu tăng `failedLoginCount` sau mỗi lần sai password. Nếu đăng nhập thành công sẽ reset lại `failedLoginCount` và `lockedUtil`.
 
 ### 4.5 CR-05 — API được bảo vệ
 
@@ -455,7 +456,7 @@ User --> UserStatus
 
 ### 7.1 Main Components
 
-#### 7.1.1 `UserAccountRegisterService`
+#### 7.1.1 `AuthenticationService`
 
 - Đăng ký tài khoản.
 - Điều phối login.
@@ -922,32 +923,9 @@ CREATE TABLE users (
 
 ## 11 Queries
 
-### 11.1 Find User for Login
-
-```sql
-SELECT id,
-       username,
-       password_hash,
-       status
-FROM users
-WHERE username = :username;
-```
-
-### 11.2 Check Username Exists
-
-```sql
-SELECT EXISTS (
-    SELECT 1
-    FROM users
-    WHERE username = :username
-);
-```
-
-
-### 11.3 Increment Login Attempt Atomically
+### 11.1 Increment Login Attempt Atomically
 
 - Sử dụng native atomic upsert của MYSQL.
-
 
 ```
  INSERT INTO login_rate_limit (
@@ -963,29 +941,39 @@ SELECT EXISTS (
                     ON DUPLICATE KEY UPDATE
                         attempt_count = attempt_count + 1
 ```
-### 11.4 Increment Failed Login Atomically
+### 11.2 Increment Failed Login Atomically
 
 ```sql
-UPDATE users
-SET failed_login_count = failed_login_count + 1,
-    locked_until =
-        CASE
-            WHEN failed_login_count + 1 >= 5
-            THEN :lockedUntil
-            ELSE locked_until
-        END,
-    updated_at = :now
-WHERE id = :userId;
+update users u  
+set u.failedLoginCount =  
+    case        when u.lockedUntil is not null             and u.lockedUntil > :now            then u.failedLoginCount  
+        when u.lockedUntil is not null             and u.lockedUntil <= :now            then 1  
+        else u.failedLoginCount + 1    end,    u.lockedUntil =    case        when u.lockedUntil is not null             and u.lockedUntil > :now            then u.lockedUntil  
+        when u.lockedUntil is not null             and u.lockedUntil <= :now            then null  
+        when u.failedLoginCount + 1 > :maxAttemptCount            then :lockedUntil  
+        else null    end,  
+    u.updatedAt = :now  
+where u.username = :username
 ```
 
-### 11.5 Reset Failed Login
+### 11.3 Reset Failed Login
 
 ```sql
-UPDATE users
-SET failed_login_count = 0,
-    locked_until = NULL,
-    updated_at = :now
-WHERE id = :userId;
+update User u  
+set u.failedLoginCount = 0 ,  
+    u.lockedUntil  = null ,  
+  u.updatedAt = :nowwhere u.username = :username
+```
+
+### 11.4 Check User Account Locked
+
+```sql
+select exist (
+select 1
+ from users  as u
+	 where u.username =: username 
+	 and  u.locked_until  <= :now
+)
 ```
 
 ---
@@ -1000,7 +988,6 @@ WHERE id = :userId;
 | Login          | Unknown username          | No account state changed                        |           Yes |                      Yes | Return generic 401         |
 | Login          | Wrong password            | Failure count increased                         |           Yes |                      Yes | User retries               |
 | Login          | Fifth wrong password      | Account temporarily locked                      |           Yes | Không cho đến khi unlock | Wait 1 hour                |
-| Login          | Account disabled          | No token created                                |           Yes |                       No | Admin enables account      |
 | Login          | Account locked            | No token created                                |           Yes |         No until timeout | Wait                       |
 | Login          | Rate limit exceeded       | In-memory counter changed                       |           Yes |                    Later | Return 429                 |
 | JWT generation | Signing failure           | Login failure state already reset có thể xảy ra |           Yes |                      Yes | Return 500, user login lại |
@@ -1013,19 +1000,16 @@ WHERE id = :userId;
 
 ## 13 Error Handling
 
-| Condition                    | HTTP Status | Error Code                   |
-| ---------------------------- | ----------: | ---------------------------- |
-| Invalid request              |         400 | `VALIDATION_ERROR`           |
-| Invalid username or password |         401 | `INVALID_CREDENTIALS`        |
-| Missing access token         |         401 | `AUTHENTICATION_REQUIRED`    |
-| Invalid access token         |         401 | `INVALID_ACCESS_TOKEN`       |
-| Expired access token         |         401 | `ACCESS_TOKEN_EXPIRED`       |
-| Account disabled             |         403 | `ACCOUNT_DISABLED`           |
-| Account deleted              |         403 | `ACCOUNT_DELETED`            |
-| Account temporarily locked   |         423 | `ACCOUNT_TEMPORARILY_LOCKED` |
-| Username already exists      |         409 | `USERNAME_ALREADY_EXISTS`    |
-| Login rate limit exceeded    |         429 | `LOGIN_RATE_LIMIT_EXCEEDED`  |
-| Unexpected server failure    |         500 | `INTERNAL_SERVER_ERROR`      |
+| Condition                    | HTTP Status | Error Code                  |
+| ---------------------------- | ----------: | --------------------------- |
+| Invalid request              |         400 | `INVALID_CREDENTIALS`       |
+| Invalid username or password |         401 | `INVALID_CREDENTIALS`       |
+| Missing access token         |         401 | `INVALID_CREDENTIALS`       |
+| Invalid access token         |         401 | `INVALID_CREDENTIALS`       |
+| Expired access token         |         401 | `INVALID_CREDENTIALS`       |
+| Username already exists      |         401 | `INVALID_CREDENTIALS`       |
+| Login rate limit exceeded    |         429 | `LOGIN_RATE_LIMIT_EXCEEDED` |
+| Unexpected server failure    |         500 | `INTERNAL_SERVER_ERROR`     |
 
 Không phân biệt response giữa:
 
@@ -1051,7 +1035,7 @@ Invalid username or password
 - User account: bảng `users`.
 - Access token validity: JWT signature và claims.
 - Temporary account lock: `failed_login_count` và `locked_until`.
-- Rate-limit counter: memory của application instance.
+- Rate-limit counter: lưu trong Redis
 
 ### 14.2 Access Token Revocation
 
@@ -1079,39 +1063,21 @@ Không có logout endpoint phía server.
 
 ## 15 Concurrency Considerations
 
-| Race condition | Protection |
-|---|---|
-| Hai register cùng username | Unique constraint |
-| Nhiều login failure đồng thời | Atomic database update |
-| Login success và login failure đồng thời | Atomic updates; trạng thái cuối có thể phụ thuộc thứ tự commit |
-| Nhiều application instances dùng in-memory rate limit | Không được hỗ trợ trong Phase 1 |
-| JWT request đồng thời | Stateless, không có shared mutable state |
+| Race condition                                        | Protection                                                     |
+| ----------------------------------------------------- | -------------------------------------------------------------- |
+| Hai register cùng username                            | Unique constraint                                              |
+| Nhiều login failure đồng thời                         | Atomic database update                                         |
+| Login success và login failure đồng thời              | Atomic updates; trạng thái cuối có thể phụ thuộc thứ tự commit |
+| Nhiều application instances dùng in-memory rate limit | Không được hỗ trợ trong Phase 1                                |
+| JWT request đồng thời                                 | Stateless, không có shared mutable state                       |
 
 Với login success và login failure đồng thời trên cùng account, Phase 1 chấp nhận quy tắc **last committed update wins**. Nếu cần semantics chặt hơn, Phase sau có thể dùng optimistic locking hoặc bảng login-attempt riêng.
 
 ---
 
-## 16 Threat Model
+## 16 Observability
 
-| Threat | Mitigation |
-|---|---|
-| Credential brute force | Rate limiting và temporary account lock |
-| Username enumeration | Generic login error |
-| Password database leak | BCrypt với salt tự sinh |
-| JWT tampering | Signature validation |
-| Stolen access token | Short expiration và HTTPS |
-| SQL injection | Parameterized query/JPA |
-| Excessive login traffic | In-memory rate limiting |
-| Sensitive-data leakage | Không log password, password hash hoặc raw JWT |
-| XSS token theft | Client không nên lưu JWT trong nơi dễ bị JavaScript độc hại truy cập |
-| CSRF | Bearer token trong Authorization header; không dùng cookie auth |
-| Privilege escalation | Thuộc Authorization Module |
-
----
-
-## 17 Observability
-
-### 17.1 Logging
+### 16.1 Logging
 
 Nên log:
 
@@ -1136,20 +1102,10 @@ Authorization header
 JWT signing secret
 ```
 
-### 17.2 Metrics
+### 16.2 Metrics
 
-```text
-auth_register_total{result}
-auth_login_total{result,reason}
-auth_login_duration_seconds
-auth_account_lock_total
-auth_rate_limit_rejected_total
-auth_token_validation_total{result,reason}
-```
 
-Không dùng username hoặc userId làm metric label vì gây cardinality cao.
-
-### 17.3 Tracing
+### 16.3 Tracing
 
 Trace các flow:
 
@@ -1161,19 +1117,16 @@ protected-request authentication
 
 Không ghi raw credential hoặc token vào span attributes.
 
-### 17.4 Alerting
+### 16.4 Alerting
 
-- Login failure rate tăng bất thường.
-- Rate-limit rejection tăng mạnh.
-- JWT invalid-signature tăng.
-- Authentication latency tăng.
-- Database errors trong register/login tăng.
+Chưa thực hiện việc alerting
+
 
 ---
 
-## 18 Design Decisions and Trade-offs
+## 17 Design Decisions and Trade-offs
 
-### 18.1 Chỉ dùng Access Token trong Phase 1
+### 17.1 Chỉ dùng Access Token trong Phase 1
 
 **Ưu điểm**
 
@@ -1188,7 +1141,7 @@ Không ghi raw credential hoặc token vào span attributes.
 - Không revoke access token ngay lập tức.
 - Không hỗ trợ quản lý nhiều phiên hoặc nhiều thiết bị.
 
-### 18.2 JWT Access Token
+### 17.2 JWT Access Token
 
 **Ưu điểm**
 
@@ -1206,19 +1159,18 @@ Không ghi raw credential hoặc token vào span attributes.
 - Access token sống ngắn: 15 phút.
 - Phase sau có thể bổ sung refresh token và token version.
 
-### 18.3 Rate Limiting Phase 1
+### 17.3 Rate Limiting Phase 1
 
 - Thực hiện trong Spring Boot.
 - Giới hạn theo IP.
-- Counter lưu in-memory.
+- Counter lưu trong Redis
 - Chỉ chính xác khi chạy một application instance.
 
 Future:
 
-- Chuyển counter sang Redis.
 - Bổ sung Nginx, Ingress hoặc API Gateway rate limiting.
 
-### 18.4 Temporary Account Lock
+### 17.4 Temporary Account Lock
 
 Khóa account theo username chống credential brute force nhưng có thể bị lợi dụng để khóa tài khoản nạn nhân.
 
@@ -1228,112 +1180,9 @@ Mitigation:
 - Không tiết lộ số lần đăng nhập còn lại.
 - Phase sau có thể áp dụng progressive delay.
 
----
-
-## 19 Test Cases
-
-### 19.1 Unit Tests
-
-#### 19.1.1 Password
-
-- Hash password.
-- Password match thành công.
-- Password match thất bại.
-- Password policy validation.
-- Không chấp nhận password dài vượt giới hạn.
-
-#### 19.1.2 JWT
-
-- Generate valid token.
-- Parse valid token.
-- Expired token.
-- Invalid signature.
-- Wrong issuer.
-- Missing required claim.
-- Malformed token.
-
-#### 19.1.3 Login Attempt
-
-- Increment failure count.
-- Lock after fifth failure.
-- Reset after success.
-- Allow login after lock expires.
-- Disabled user remains rejected.
-
-#### 19.1.4 Rate Limiter
-
-- Allow request within limit.
-- Reject request over limit.
-- Different IPs use independent buckets.
-- Bucket resets after configured duration.
-
-### 19.2 Repository Integration Tests
-
-- Unique username constraint.
-- Find user by normalized username.
-- Atomic failed-login increment.
-- Lock time set on fifth failure.
-- Reset failed-login state.
-- Concurrent registration with same username.
-
-### 19.3 API Integration Tests
-
-#### 19.3.1 Register
-
-- Register success.
-- Duplicate username.
-- Username normalized to lowercase.
-- Invalid username.
-- Weak password.
-- DB failure.
-
-#### 19.3.2 Login
-
-- Login success.
-- Unknown username.
-- Wrong password.
-- Disabled account.
-- Deleted account.
-- Temporarily locked account.
-- Lock after five failures.
-- Failure counter reset after success.
-- Login allowed after lock expiration.
-- Rate limit exceeded.
-- JWT returned with required claims.
-
-#### 19.3.3 Protected API
-
-- Missing access token.
-- Valid access token.
-- Expired access token.
-- Invalid signature.
-- Wrong issuer.
-- Tampered token.
-- Malformed Authorization header.
-- Public endpoint works without token.
-- Protected endpoint does not reach controller when authentication fails.
-
-### 19.4 Concurrency Tests
-
-- Hai request register cùng username.
-- Nhiều login failure đồng thời.
-- Login success và login failure đồng thời.
-- Nhiều protected requests sử dụng cùng JWT.
-
-### 19.5 Security Tests
-
-- Username enumeration.
-- JWT tampering.
-- Login brute-force simulation.
-- Oversized token input.
-- Sensitive-data leakage trong log.
-- SQL injection payload.
-- XSS payload trong username.
-- CSRF không áp dụng cho bearer token header.
 
 ---
-
-## 20 Future Phase
+## 18 Future Phase
 
 Sau khi Phase 1 ổn định, có thể mở rộng:
 

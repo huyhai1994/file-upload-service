@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
 
-@ConfigurationProperties("login-attempt")
+@ConfigurationProperties("security.login-attempt")
 @Getter
 @Setter
 public class LoginAttemptProperties {

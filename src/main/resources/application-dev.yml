@@ -56,6 +56,12 @@ security:
     issuer: file-upload-service
   identity-hash:
     secret-key: eWeHbeT1wLynBeNl/odFQUTNONHIPXyNTd6la4puAdc=
+  login-rate-limit:
+    username-ip-max-attempts: 10
+    window-duration: 1m
+  login-attempt:
+    failure-attempts: 5
+    lock-duration: 60m
 logging:
   level:
     org:
@@ -67,9 +73,3 @@ server:
   tomcat:
     mbeanregistry:
       enabled: true
-login-rate-limit:
-  username-ip-max-attempts: 10
-  window-duration: 1m
-login-attempt:
-  failure-attempts: 5
-  lock-duration: 60m
