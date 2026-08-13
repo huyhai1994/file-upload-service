@@ -11,7 +11,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.*;
-import java.util.Objects;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -52,7 +51,7 @@ class LoginAttemptServiceMockTest {
     void checkLock_whenUserLocked_thenReturnTrue() {
         String username = MockUserBuilder.NORMALIZED_USERNAME;
         when(userRepository
-                .existsByUsernameAndLockedUntilIsNotNull(username))
+                .existsByUsernameAndLockedUntilAfter(username, LocalDateTime.now(clock)))
                 .thenReturn(Boolean.TRUE);
         assertThat(loginAttemptService.checkLock(username))
                 .isTrue();
@@ -62,7 +61,7 @@ class LoginAttemptServiceMockTest {
     void checkLock_whenUserNotLocked_thenReturnFalse() {
         String username = MockUserBuilder.NORMALIZED_USERNAME;
         when(userRepository
-                .existsByUsernameAndLockedUntilIsNotNull(username)
+                .existsByUsernameAndLockedUntilAfter(username, LocalDateTime.now(clock))
         )
                 .thenReturn(Boolean.FALSE);
         assertThat(loginAttemptService.checkLock(username))

@@ -25,6 +25,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -92,7 +94,7 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
     @Test
     void existsByUsernameAndLockedUntilIsNotNull_whenUserAccountNotLocked_thenLockUntilIsNull() {
         persistUser();
-        assertThat(userRepository.existsByUsernameAndLockedUntilIsNotNull(MockUserBuilder.NORMALIZED_USERNAME)).isFalse();
+        assertThat(userRepository.existsByUsernameAndLockedUntilAfter(MockUserBuilder.NORMALIZED_USERNAME, LocalDateTime.now(clock))).isFalse();
     }
 
     @Test
@@ -102,8 +104,9 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
 
         assertThat(
                 userRepository
-                        .existsByUsernameAndLockedUntilIsNotNull(
-                                MockUserBuilder.NORMALIZED_USERNAME
+                        .existsByUsernameAndLockedUntilAfter(
+                                MockUserBuilder.NORMALIZED_USERNAME,
+                                LocalDateTime.now(clock)
                         )
         )
                 .isTrue();
@@ -166,20 +169,45 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
         assertThat(persistedUser.getUpdatedAt())
                 .isEqualTo(LocalDateTime.now(clock));
         assertThat(persistedUser.getFailedLoginCount())
-                .isEqualTo(6);
+                .isEqualTo(5);
 
         userRepository.deleteAllInBatch();
     }
 
     @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void recordLoginFailureCount_whenLockHasExpired_thenResetFailureCountAndClearLockedUntil() {
+        persistLockedUser();
+
+        LocalDateTime lockedUntil = LocalDateTime.now(clock).plusMinutes(60);
+        LocalDateTime currentTime = LocalDateTime.now(clock).plusMinutes(61);
+
+        int affectedRows = transactionTemplate.execute(status ->
+                userRepository.recordLoginFailureCount(
+                        MockUserBuilder.NORMALIZED_USERNAME,
+                        lockedUntil,
+                        5,
+                        currentTime
+                )
+        );
+
+        User persistedUser = userRepository
+                .findByUsername(MockUserBuilder.NORMALIZED_USERNAME)
+                .orElseThrow();
+
+        assertThat(affectedRows).isOne();
+        assertThat(persistedUser.getLockedUntil()).isNull();
+        assertThat(persistedUser.getFailedLoginCount()).isOne();
+    }
+
+    @Test
     void resetFailureCount_whenFailureCountBiggerThan0_thenResetTo0AndFailedLoginCountIsNull() {
         persistLockedUser();
-        User persistLockedUser = userRepository
-                .findAll()
-                .stream()
-                .findFirst()
-                .orElseThrow();
+
+        User persistLockedUser = userRepository.findByUsername(MockUserBuilder.NORMALIZED_USERNAME).orElseThrow();
+
         String username = persistLockedUser.getUsername();
+
         assertThat(userRepository.resetFailureCount(username, LocalDateTime.now(clock))).isOne();
 
         entityManager.flush();

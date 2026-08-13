@@ -38,6 +38,7 @@ public class LoginAttemptService {
     @Transactional
     public boolean checkLock(String username) {
         Objects.requireNonNull(username);
-        return userRepository.existsByUsernameAndLockedUntilIsNotNull(username);
+        LocalDateTime now = LocalDateTime.now(clock);
+        return userRepository.existsByUsernameAndLockedUntilAfter(username, now);
     }
 }
