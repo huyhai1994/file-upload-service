@@ -198,6 +198,8 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
         assertThat(affectedRows).isOne();
         assertThat(persistedUser.getLockedUntil()).isNull();
         assertThat(persistedUser.getFailedLoginCount()).isOne();
+
+        userRepository.deleteAllInBatch();
     }
 
     @Test
@@ -216,11 +218,8 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
         int totalUser = Math.toIntExact(userRepository.findAll().size());
         assertThat(totalUser).isOne();
 
-        User resetLockedUser = userRepository
-                .findAll()
-                .stream()
-                .findFirst()
-                .orElseThrow();
+        User resetLockedUser = userRepository.findByUsername(MockUserBuilder
+                .NORMALIZED_USERNAME).orElseThrow();
 
         assertThat(resetLockedUser.getLockedUntil()).isNull();
         assertThat(resetLockedUser.getFailedLoginCount()).isZero();
