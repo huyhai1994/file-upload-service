@@ -66,3 +66,9 @@ security:
   login-attempt:
     failure-attempts: 5
     lock-duration: 60m
+clients:
+  notification-service:
+    base-url: http://notification-service:8080
+    base-uri: /api/v1/notifications
+    connect-timeout: 2s
+    read-timeout: 5s
