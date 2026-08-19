@@ -12,6 +12,7 @@ import org.mini_lab.file_upload_service.security.notification.dto.NotificationTy
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -23,6 +24,7 @@ public class UserAccountRegisterService {
     private final ApplicationEventPublisher eventPublisher;
     private final UserRegistrationFactory userRegistrationFactory;
 
+    @Transactional
     public RegisterResponse register(RegisterRequest request) {
         User user = userRegistrationFactory.createUser(request);
         final User persistedUser = persistUser(user);
@@ -42,7 +44,7 @@ public class UserAccountRegisterService {
                 new UserRegisteredEvent(
                         UUID.randomUUID(),
                         NotificationType.WELCOME_EMAIL,
-                        savedUser.getUsername(),
+                        savedUser.getEmailAddress(),
                         savedUser.getUsername()
                 )
         );

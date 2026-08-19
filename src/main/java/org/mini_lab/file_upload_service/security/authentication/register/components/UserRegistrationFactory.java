@@ -28,7 +28,8 @@ public class UserRegistrationFactory {
 
         User user = new User(
                 normalizedUsername,
-                passwordHash
+                passwordHash,
+                request.emailAddress()
         );
         return user;
 

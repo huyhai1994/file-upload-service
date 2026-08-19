@@ -3,7 +3,6 @@ package org.mini_lab.file_upload_service.security.notification.component;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mini_lab.file_upload_service.security.notification.dto.UserRegisteredEvent;
-import org.mini_lab.file_upload_service.security.notification.dto.NotificationType;
 import org.mini_lab.file_upload_service.security.notification.service.NotificationServiceClient;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;

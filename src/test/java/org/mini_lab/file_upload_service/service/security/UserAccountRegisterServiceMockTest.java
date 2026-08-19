@@ -18,9 +18,11 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mini_lab.file_upload_service.support.MockPasswordBuilder.VALID_PASSWORD;
 import static org.mini_lab.file_upload_service.support.MockUserBuilder.DEFAULT_USERNAME;
+import static org.mini_lab.file_upload_service.support.MockUserBuilder.VALID_EMAIL;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -67,7 +69,7 @@ class UserAccountRegisterServiceMockTest {
         when(userRegistrationFactory.createUser(eq(request)))
                 .thenReturn(registeredUser(request));
         when(userRepository.saveAndFlush(any(User.class)))
-                .thenReturn(new User(request.username(), request.password()));
+                .thenReturn(new User(request.username(), request.password(), request.emailAddress()));
 
         userAccountRegisterService.register(request);
 
@@ -80,9 +82,10 @@ class UserAccountRegisterServiceMockTest {
 
         UserRegisteredEvent event = eventCaptor.getValue();
 
-        assertEquals(request.username(), event.username());
-        assertEquals(NotificationType.WELCOME_EMAIL, event.notificationType());
-        assertNotNull(event.eventId());
+        assertThat(request.username()).isEqualTo(event.username());
+        assertThat(request.emailAddress()).isEqualTo(event.emailAddress());
+        assertThat(NotificationType.WELCOME_EMAIL).isEqualTo(event.notificationType());
+        assertThat(event.eventId()).isNotNull();
     }
 
     private User registeredUser(RegisterRequest request) {
@@ -90,12 +93,12 @@ class UserAccountRegisterServiceMockTest {
     }
 
     private RegisterRequest validRegisterRequest() {
-        return registerRequest(DEFAULT_USERNAME, VALID_PASSWORD);
+        return registerRequest(DEFAULT_USERNAME, VALID_PASSWORD, VALID_EMAIL);
     }
 
 
-    private RegisterRequest registerRequest(String username, String password) {
-        return new RegisterRequest(username, password);
+    private RegisterRequest registerRequest(String username, String password, String email) {
+        return new RegisterRequest(username, password, email);
     }
 
 }
