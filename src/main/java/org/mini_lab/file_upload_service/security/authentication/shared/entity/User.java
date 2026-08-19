@@ -49,12 +49,23 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "email_address")
+    private String emailAddress;
+
     protected User() {
     }
 
     public User(String username, String passwordHash) {
         this.username = username;
         this.passwordHash = passwordHash;
+        this.status = UserStatus.ACTIVE;
+        this.failedLoginCount = 0;
+    }
+
+    public User(String username, String passwordHash, String emailAddress) {
+        this.username = username;
+        this.passwordHash = passwordHash;
+        this.emailAddress = emailAddress;
         this.status = UserStatus.ACTIVE;
         this.failedLoginCount = 0;
     }

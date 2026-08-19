@@ -4,7 +4,7 @@ import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 import org.mini_lab.file_upload_service.security.notification.configuration.rest_client.NotificationClientProperties;
 import org.mini_lab.file_upload_service.security.notification.dto.NotificationAcceptedResponse;
-import org.mini_lab.file_upload_service.security.notification.dto.NotificationRequest;
+import org.mini_lab.file_upload_service.security.notification.dto.UserRegisteredEvent;
 import org.mini_lab.file_upload_service.security.notification.dto.NotificationType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -51,7 +51,7 @@ class NotificationServiceClientMockTest {
     @Test
     void send_whenResponseIsSuccessful_shouldDeserializeResponse() {
         UUID eventId = MOCK_EVENT_ID;
-        NotificationRequest request = createValidNotificationRequest(eventId);
+        UserRegisteredEvent request = createValidNotificationRequest(eventId);
 
         postRequest(getRequest(eventId,
                         NotificationType.WELCOME_EMAIL, MOCK_USER_EMAIL, MOCK_USER_NAME),
@@ -70,8 +70,8 @@ class NotificationServiceClientMockTest {
         mockServer.verify();
     }
 
-    private static @NonNull NotificationRequest createValidNotificationRequest(UUID eventId) {
-        return new NotificationRequest(
+    private static @NonNull UserRegisteredEvent createValidNotificationRequest(UUID eventId) {
+        return new UserRegisteredEvent(
                 eventId,
                 NotificationType.WELCOME_EMAIL,
                 MOCK_USER_EMAIL,
@@ -83,7 +83,7 @@ class NotificationServiceClientMockTest {
     void send_whenProviderAddMoreFieldToResponse_shouldDeserializeResponse() {
         UUID eventId = MOCK_EVENT_ID;
 
-        NotificationRequest request = createValidNotificationRequest(eventId);
+        UserRegisteredEvent request = createValidNotificationRequest(eventId);
 
         String providerResponse = """
                 {

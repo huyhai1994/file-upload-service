@@ -73,3 +73,9 @@ server:
   tomcat:
     mbeanregistry:
       enabled: true
+clients:
+  notification-service:
+    base-url: http://host.docker.internal:20010
+    base-uri: /api/v1/notifications
+    connect-timeout: 10s
+    read-timeout: 5s

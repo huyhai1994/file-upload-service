@@ -9,9 +9,14 @@ import org.mini_lab.file_upload_service.security.authentication.register.excepti
 import org.mini_lab.file_upload_service.security.authentication.shared.repository.UserRepository;
 import org.mini_lab.file_upload_service.security.authentication.shared.service.NormalizeUsernameService;
 import org.mini_lab.file_upload_service.security.authentication.shared.service.PasswordVerifyService;
+import org.mini_lab.file_upload_service.security.notification.dto.UserRegisteredEvent;
+import org.mini_lab.file_upload_service.security.notification.dto.NotificationType;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +27,7 @@ public class UserAccountRegisterService {
     private final NormalizeUsernameService normalizeUsernameService;
     private final UsernameVerifyService usernameVerifyService;
     private final PasswordVerifyService passwordVerifyService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
@@ -37,15 +43,25 @@ public class UserAccountRegisterService {
                 passwordHash
         );
 
+        final User savedUser;
         try {
-            User savedUser = userRepository.saveAndFlush(user);
-
-            return new RegisterResponse(
-                    savedUser.getId(),
-                    savedUser.getUsername()
-            );
+            savedUser = userRepository.saveAndFlush(user);
         } catch (DataIntegrityViolationException exception) {
             throw new UsernameAlreadyExistsException(normalizedUsername);
         }
+
+        eventPublisher.publishEvent(
+                new UserRegisteredEvent(
+                        UUID.randomUUID(),
+                        NotificationType.WELCOME_EMAIL,
+                        savedUser.getUsername(),
+                        savedUser.getUsername()
+                )
+        );
+
+        return new RegisterResponse(
+                savedUser.getId(),
+                savedUser.getUsername()
+        );
     }
 }

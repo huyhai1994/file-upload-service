@@ -19,6 +19,7 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -52,6 +53,9 @@ class UserAccountRegisterServiceMockTest {
 
     @Mock
     private PasswordVerifyService passwordVerifyService;
+
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @Test
     void register_whenUsernameTooLong_thenThrowExceptionAndNotSave() {

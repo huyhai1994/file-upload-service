@@ -2,7 +2,7 @@ package org.mini_lab.file_upload_service.security.notification.service;
 
 import org.mini_lab.file_upload_service.security.notification.configuration.rest_client.NotificationClientProperties;
 import org.mini_lab.file_upload_service.security.notification.dto.NotificationAcceptedResponse;
-import org.mini_lab.file_upload_service.security.notification.dto.NotificationRequest;
+import org.mini_lab.file_upload_service.security.notification.dto.UserRegisteredEvent;
 import org.mini_lab.file_upload_service.security.notification.exception.NotificationServiceException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
@@ -21,7 +21,7 @@ public class NotificationServiceClient {
     }
 
     public NotificationAcceptedResponse send(
-            NotificationRequest request
+            UserRegisteredEvent request
     ) {
         return notificationRestClient.post()
                 .uri(properties.baseUri())
