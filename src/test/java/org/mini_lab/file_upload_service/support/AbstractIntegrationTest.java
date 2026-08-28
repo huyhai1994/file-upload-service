@@ -50,7 +50,7 @@ public abstract class AbstractIntegrationTest {
                 .withUsername("test")
                 .withPassword("test")
                 .withNetwork(NETWORK)
-                .withNetworkAliases("mysql");
+                .withNetworkAliases("mysql"); // some comment
 
         redisDB = new RedisContainer(DockerImageName.parse("redis:6.2.6"))
                 .withNetwork(NETWORK)
