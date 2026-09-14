@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mini_lab.file_upload_service.security.authentication.register.components.UserRegistrationFactory;
 import org.mini_lab.file_upload_service.security.authentication.register.dto.RegisterRequest;
+import org.mini_lab.file_upload_service.security.authentication.register.service.DomainEventPublisher;
 import org.mini_lab.file_upload_service.security.authentication.shared.entity.User;
 import org.mini_lab.file_upload_service.security.authentication.register.exception.UsernameAlreadyExistsException;
 import org.mini_lab.file_upload_service.security.authentication.register.service.UserAccountRegisterService;
@@ -11,10 +12,10 @@ import org.mini_lab.file_upload_service.security.authentication.shared.repositor
 import org.mini_lab.file_upload_service.security.notification.dto.NotificationType;
 import org.mini_lab.file_upload_service.security.notification.dto.UserRegisteredEvent;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 
 
@@ -35,10 +36,13 @@ class UserAccountRegisterServiceMockTest {
     private UserRepository userRepository;
 
     @Mock
-    private ApplicationEventPublisher applicationEventPublisher;
+    private DomainEventPublisher domainEventPublisher;
 
     @Mock
     private UserRegistrationFactory userRegistrationFactory;
+
+    @Captor
+    ArgumentCaptor<UserRegisteredEvent> eventArgumentCaptor;
 
 
     @Test
@@ -59,7 +63,7 @@ class UserAccountRegisterServiceMockTest {
         );
 
         verify(userRepository).saveAndFlush(any(User.class));
-        verifyNoInteractions(applicationEventPublisher);
+        verifyNoInteractions(domainEventPublisher);
     }
 
     @Test
@@ -74,13 +78,11 @@ class UserAccountRegisterServiceMockTest {
         userAccountRegisterService.register(request);
 
         verify(userRepository).saveAndFlush(any(User.class));
-        ArgumentCaptor<UserRegisteredEvent> eventCaptor =
-                ArgumentCaptor.forClass(UserRegisteredEvent.class);
 
-        verify(applicationEventPublisher)
-                .publishEvent(eventCaptor.capture());
+        verify(domainEventPublisher)
+                .publishEvent(eventArgumentCaptor.capture());
 
-        UserRegisteredEvent event = eventCaptor.getValue();
+        UserRegisteredEvent event = eventArgumentCaptor.getValue();
 
         assertThat(request.username()).isEqualTo(event.username());
         assertThat(request.emailAddress()).isEqualTo(event.emailAddress());

@@ -3,6 +3,9 @@ server:
 spring:
   application:
     name: file_upload_service_test
+  profiles:
+    active:
+      - test
   datasource:
     hikari:
       maximum-pool-size: 5
