@@ -26,12 +26,11 @@ public class UserRegistrationFactory {
 
         String passwordHash = passwordEncoder.encode(request.password());
 
-        User user = new User(
+        return new User(
                 normalizedUsername,
                 passwordHash,
                 request.emailAddress()
         );
-        return user;
 
     }
 
