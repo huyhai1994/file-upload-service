@@ -10,6 +10,8 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
@@ -26,9 +28,12 @@ class OutBoxEventRepositoryIntegrationTest extends AbstractIntegrationTest {
     @Test
     void save_whenSaveEvent_thenSuccess() {
         OutboxEvent event = outBoxEventRepository.saveAndFlush(MockOutboxEventBuilder.pendingEvent());
+        UUID id = event.getId();
+
         entityManager.clear();
-        OutboxEvent persistedEvent = outBoxEventRepository.findAll().get(0);
-        assertThat(persistedEvent.getId()).isEqualTo(MockOutboxEventBuilder.pendingEvent().getId());
+        OutboxEvent persistedEvent = outBoxEventRepository.findById(id).orElseThrow();
+        assertThat(persistedEvent.getId()).isEqualTo(id);
+
     }
 
 }

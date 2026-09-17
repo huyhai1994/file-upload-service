@@ -5,6 +5,7 @@ import org.mini_lab.file_upload_service.security.notification.entity.OutboxEvent
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
+import java.util.UUID;
 
 public final class MockOutboxEventBuilder {
 
@@ -17,7 +18,7 @@ public final class MockOutboxEventBuilder {
 
     public static OutboxEvent pendingEvent() {
         return builder()
-                .id("event-1")
+                .id(UUID.fromString("00000000-0000-0000-0000-000000000001"))
                 .payload("""
                         {
                           "userId": "user-1",
@@ -32,7 +33,7 @@ public final class MockOutboxEventBuilder {
 
     public static OutboxEvent processingEvent() {
         return builder()
-                .id("event-2")
+                .id(UUID.fromString("00000000-0000-0000-0000-000000000002"))
                 .payload("""
                         {
                           "userId": "user-2",
@@ -47,7 +48,7 @@ public final class MockOutboxEventBuilder {
 
     public static OutboxEvent completedEvent() {
         return builder()
-                .id("event-3")
+                .id(UUID.fromString("00000000-0000-0000-0000-000000000003"))
                 .payload("""
                         {
                           "userId": "user-3",
@@ -63,7 +64,7 @@ public final class MockOutboxEventBuilder {
 
     public static OutboxEvent failedEvent() {
         return builder()
-                .id("event-4")
+                .id(UUID.fromString("00000000-0000-0000-0000-000000000004"))
                 .payload("""
                         {
                           "userId": "user-4",
@@ -79,12 +80,14 @@ public final class MockOutboxEventBuilder {
 
     public static final class Builder {
 
-        private String id = "event-default";
+        private UUID id = UUID.randomUUID();
+
         private String payload = """
                 {
                   "userId": "user-default"
                 }
                 """;
+
         private OutboxEventStatus status = OutboxEventStatus.PENDING;
         private Integer retryCount = 0;
         private Instant createdAt = Instant.parse("2026-09-16T00:00:00Z");
@@ -93,7 +96,7 @@ public final class MockOutboxEventBuilder {
         private Builder() {
         }
 
-        public Builder id(String id) {
+        public Builder id(UUID id) {
             this.id = id;
             return this;
         }

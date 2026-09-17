@@ -28,7 +28,7 @@ public class OutboxEventDomainPublisher implements DomainEventPublisher {
 
     private OutboxEvent mapFrom(UserRegisteredEvent event) {
         OutboxEvent outboxEvent = new OutboxEvent();
-        outboxEvent.setId(UUID.randomUUID().toString());
+        outboxEvent.setId(UUID.randomUUID());
         outboxEvent.setCreatedAt(Instant.now(clock));
         outboxEvent.setStatus(OutboxEventStatus.PENDING);
         outboxEvent.setRetryCount(3);
