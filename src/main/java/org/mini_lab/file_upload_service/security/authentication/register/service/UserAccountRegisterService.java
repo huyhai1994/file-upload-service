@@ -9,6 +9,7 @@ import org.mini_lab.file_upload_service.security.authentication.register.excepti
 import org.mini_lab.file_upload_service.security.authentication.shared.repository.UserRepository;
 import org.mini_lab.file_upload_service.security.notification.dto.UserRegisteredEvent;
 import org.mini_lab.file_upload_service.security.notification.dto.NotificationType;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,12 +17,23 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 public class UserAccountRegisterService {
 
     private final UserRepository userRepository;
     private final DomainEventPublisher eventPublisher;
     private final UserRegistrationFactory userRegistrationFactory;
+
+    public UserAccountRegisterService(
+            UserRepository userRepository,
+//            @Qualifier("applicationDomainEventPublisher")
+            @Qualifier("outboxEventDomainPublisher")
+            DomainEventPublisher eventPublisher,
+            UserRegistrationFactory userRegistrationFactory
+    ) {
+        this.userRepository = userRepository;
+        this.eventPublisher = eventPublisher;
+        this.userRegistrationFactory = userRegistrationFactory;
+    }
 
     @Transactional
     public RegisterResponse register(RegisterRequest request) {

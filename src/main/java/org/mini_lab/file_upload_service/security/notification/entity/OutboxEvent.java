@@ -2,6 +2,7 @@ package org.mini_lab.file_upload_service.security.notification.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.mini_lab.file_upload_service.security.notification.dto.OutboxEventStatus;
 
 import java.time.Instant;
@@ -9,6 +10,7 @@ import java.time.Instant;
 @Entity
 @Table(name = "outbox_events")
 @Getter
+@Setter
 public class OutboxEvent {
 
     @Id
@@ -30,25 +32,5 @@ public class OutboxEvent {
 
     @Column(name = "processed_at")
     private Instant processedAt;
-
-    private OutboxEvent(
-            String id,
-            String payload,
-            OutboxEventStatus status,
-            Integer retryCount,
-            Instant createdAt,
-            Instant processedAt
-    ) {
-        this.id = id;
-        this.payload = payload;
-        this.status = status;
-        this.retryCount = retryCount;
-        this.createdAt = createdAt;
-        this.processedAt = processedAt;
-    }
-
-    public OutboxEvent() {
-
-    }
 
 }
