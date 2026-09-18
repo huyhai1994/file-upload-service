@@ -10,11 +10,17 @@ import org.mini_lab.file_upload_service.security.notification.repository.OutBoxE
 import org.mini_lab.file_upload_service.support.AbstractIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+
 import static org.mini_lab.file_upload_service.support.MockPasswordBuilder.VALID_PASSWORD;
 import static org.mini_lab.file_upload_service.support.MockUserBuilder.DEFAULT_USERNAME;
 import static org.mini_lab.file_upload_service.support.MockUserBuilder.VALID_EMAIL;
@@ -29,7 +35,7 @@ class UserAccountRegisterServiceIntegrationTest extends AbstractIntegrationTest 
     @Autowired
     UserRepository userRepository;
 
-    @Autowired
+    @MockitoSpyBean
     OutBoxEventRepository outBoxEventRepository;
 
     @BeforeEach
@@ -52,12 +58,38 @@ class UserAccountRegisterServiceIntegrationTest extends AbstractIntegrationTest 
         assertThat(events.get(0).getCreatedAt()).isNotNull();
     }
 
-    private RegisterRequest validRegisterRequest() {
-        return registerRequest(DEFAULT_USERNAME, VALID_PASSWORD, VALID_EMAIL);
+
+    @Test
+    void register_whenSavingOutboxEventFails_thenRollbackUser() {
+
+        RegisterRequest request = validRegisterRequest();
+
+        doThrow(new RuntimeException("Outbox database error"))
+                .when(outBoxEventRepository)
+                .save(any(OutboxEvent.class));
+
+        assertThatThrownBy(() ->
+                userAccountRegisterService.register(request)
+        )
+                .isInstanceOf(RuntimeException.class);
+
+        assertThat(userRepository.findAll()).isEmpty();
+        assertThat(outBoxEventRepository.findAll()).isEmpty();
     }
 
+    private RegisterRequest validRegisterRequest() {
+        return registerRequest(
+                DEFAULT_USERNAME,
+                VALID_PASSWORD,
+                VALID_EMAIL
+        );
+    }
 
-    private RegisterRequest registerRequest(String username, String password, String email) {
+    private RegisterRequest registerRequest(
+            String username,
+            String password,
+            String email
+    ) {
         return new RegisterRequest(username, password, email);
     }
 }
