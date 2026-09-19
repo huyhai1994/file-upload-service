@@ -24,7 +24,6 @@ public final class MockOutboxEventBuilder {
                         }
                         """)
                 .status(OutboxEventStatus.PENDING)
-                .retryCount(0)
                 .build();
     }
 
@@ -37,7 +36,6 @@ public final class MockOutboxEventBuilder {
                         }
                         """)
                 .status(OutboxEventStatus.PROCESSING)
-                .retryCount(0)
                 .build();
     }
 
@@ -64,7 +62,6 @@ public final class MockOutboxEventBuilder {
                         }
                         """)
                 .status(OutboxEventStatus.FAILED)
-                .retryCount(3)
                 .processedAt(Instant.parse("2026-09-16T01:05:00Z"))
                 .build();
     }

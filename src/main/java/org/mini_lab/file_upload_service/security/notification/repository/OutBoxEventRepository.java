@@ -10,7 +10,6 @@ import java.time.Instant;
 
 public interface OutBoxEventRepository extends JpaRepository<OutboxEvent, Long> {
 
-    // @TODO: PENDING -> PROCESSING
     @Modifying
     @Query("""
             update OutboxEvent oe
@@ -22,9 +21,22 @@ public interface OutBoxEventRepository extends JpaRepository<OutboxEvent, Long> 
                         and oe.status = OutboxEventStatus.PENDING
             """)
     int markProcessing(@Param("id") Long id,
-                       @Param("now")Instant now);
+                       @Param("now") Instant now);
 
-    // @TODO: PROCESSING -> PENDING & update retry_count + 1
+    @Modifying
+    @Query("""
+            update OutboxEvent oe
+            set
+                        oe.status = OutboxEventStatus.PENDING,
+                        oe.retryCount = oe.retryCount  + 1,
+                        oe.updatedAt = :now
+            where
+                        oe.id = :id
+                        and oe.status = OutboxEventStatus.PROCESSING
+            """)
+    int retryEvent(@Param("id") Long id,
+                   @Param("now") Instant now);
+
     // @TODO: PROCESSING -> FAILED
     // @TODO: PROCESSING -> COMPLETED
 }

@@ -70,7 +70,21 @@ class OutBoxEventRepositoryIntegrationTest extends AbstractIntegrationTest {
         assertClaimsJobs(
                 () -> transactionTemplate.execute(
                         status -> outBoxEventRepository.markProcessing(id, Instant.now(clock))
-                ), integer -> integer > 0);
+                ), claim -> claim > 0);
+
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void retryEvent_whenMultipleThreadsAccessConcurrently_thenOnlyOneJobClaimed() {
+        Long id = outBoxEventRepository.saveAndFlush(MockOutboxEventBuilder.processingEvent()).getId();
+        assertClaimsJobs(
+                () -> transactionTemplate.execute(
+                        status -> outBoxEventRepository.retryEvent(id, Instant.now(clock))
+                ), claim -> claim > 0);
+
+        OutboxEvent retryEvent = outBoxEventRepository.findById(id).orElseThrow();
+        assertThat(retryEvent.getRetryCount()).isOne();
 
     }
 

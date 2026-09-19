@@ -25,7 +25,6 @@ public class OutboxEventDomainPublisher implements DomainEventPublisher {
     private OutboxEvent mapFrom(UserRegisteredEvent event) {
         OutboxEvent outboxEvent = new OutboxEvent();
         outboxEvent.setStatus(OutboxEventStatus.PENDING);
-        outboxEvent.setRetryCount(3);
         outboxEvent.setPayload(event.toString());
         return outboxEvent;
     }
