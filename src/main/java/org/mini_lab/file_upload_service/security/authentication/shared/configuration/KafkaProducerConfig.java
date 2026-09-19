@@ -49,6 +49,9 @@ public class KafkaProducerConfig {
                 kafkaProperties.getProducer().getProperties()
         );
 
+//        props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, kafkaProperties.getProducer().getProperties().get("max.block.ms"));
+        props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 1000);
+
         return new DefaultKafkaProducerFactory<>(props);
     }
 
