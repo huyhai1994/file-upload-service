@@ -37,6 +37,30 @@ public interface OutBoxEventRepository extends JpaRepository<OutboxEvent, Long> 
     int retryEvent(@Param("id") Long id,
                    @Param("now") Instant now);
 
-    // @TODO: PROCESSING -> FAILED
-    // @TODO: PROCESSING -> COMPLETED
+    @Modifying
+    @Query("""
+            update OutboxEvent oe
+            set
+                        oe.status = OutboxEventStatus.FAILED,
+                        oe.updatedAt = :now
+            where
+                        oe.id = :id
+                        and oe.status = OutboxEventStatus.PROCESSING
+            """)
+    int markFailed(@Param("id") Long id,
+                       @Param("now") Instant now);
+
+    @Modifying
+    @Query("""
+            update OutboxEvent oe
+            set
+                        oe.status = OutboxEventStatus.COMPLETED,
+                        oe.updatedAt = :now,
+                        oe.processedAt = :now
+            where
+                        oe.id = :id
+                        and oe.status = OutboxEventStatus.PROCESSING
+            """)
+    int markCompleted(@Param("id") Long id,
+                   @Param("now") Instant now);
 }

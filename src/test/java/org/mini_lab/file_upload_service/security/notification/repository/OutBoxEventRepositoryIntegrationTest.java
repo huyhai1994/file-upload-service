@@ -88,6 +88,26 @@ class OutBoxEventRepositoryIntegrationTest extends AbstractIntegrationTest {
 
     }
 
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void markFailed_whenMultipleThreadsAccessConcurrently_thenOnlyOneJobClaimed() {
+        Long id = outBoxEventRepository.saveAndFlush(MockOutboxEventBuilder.processingEvent()).getId();
+        assertClaimsJobs(
+                () -> transactionTemplate.execute(
+                        status -> outBoxEventRepository.markFailed(id, Instant.now(clock))
+                ), claim -> claim > 0);
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void markCompleted_whenMultipleThreadsAccessConcurrently_thenOnlyOneJobClaimed() {
+        Long id = outBoxEventRepository.saveAndFlush(MockOutboxEventBuilder.processingEvent()).getId();
+        assertClaimsJobs(
+                () -> transactionTemplate.execute(
+                        status -> outBoxEventRepository.markCompleted(id, Instant.now(clock))
+                ), claim -> claim > 0);
+    }
+
     private <T> void assertClaimsJobs(Callable<T> callable, Predicate<T> predicate) {
         final int REQUEST_COUNT = 10;
 
