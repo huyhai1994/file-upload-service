@@ -27,6 +27,11 @@ logging:
           results: TRACE
       springframework:
         security: TRACE
+      apache:
+        kafka:
+          clients:
+            producer:
+              ProducerConfig: DEBUG
 minio:
   endpoint: http://localhost:9000
   access-key: minio
@@ -35,6 +40,9 @@ minio:
   connect-timeout: 30
   read-timeout: 30
   write-timeout: 30
+user-register:
+  topic: "test.notifications.register-events.v1"
+
 file:
   extension:
     allowed-list:
