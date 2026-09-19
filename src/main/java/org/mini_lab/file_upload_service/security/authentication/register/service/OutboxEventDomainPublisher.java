@@ -9,16 +9,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Clock;
-import java.time.Instant;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class OutboxEventDomainPublisher implements DomainEventPublisher {
 
     private final OutBoxEventRepository outBoxEventRepository;
-    private final Clock clock;
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
@@ -28,8 +24,6 @@ public class OutboxEventDomainPublisher implements DomainEventPublisher {
 
     private OutboxEvent mapFrom(UserRegisteredEvent event) {
         OutboxEvent outboxEvent = new OutboxEvent();
-        outboxEvent.setId(UUID.randomUUID());
-        outboxEvent.setCreatedAt(Instant.now(clock));
         outboxEvent.setStatus(OutboxEventStatus.PENDING);
         outboxEvent.setRetryCount(3);
         outboxEvent.setPayload(event.toString());

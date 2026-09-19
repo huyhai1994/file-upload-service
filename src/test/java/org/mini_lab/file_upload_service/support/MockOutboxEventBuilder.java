@@ -5,7 +5,6 @@ import org.mini_lab.file_upload_service.security.notification.entity.OutboxEvent
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
-import java.util.UUID;
 
 public final class MockOutboxEventBuilder {
 
@@ -18,7 +17,6 @@ public final class MockOutboxEventBuilder {
 
     public static OutboxEvent pendingEvent() {
         return builder()
-                .id(UUID.fromString("00000000-0000-0000-0000-000000000001"))
                 .payload("""
                         {
                           "userId": "user-1",
@@ -27,13 +25,11 @@ public final class MockOutboxEventBuilder {
                         """)
                 .status(OutboxEventStatus.PENDING)
                 .retryCount(0)
-                .createdAt(Instant.parse("2026-09-16T01:00:00Z"))
                 .build();
     }
 
     public static OutboxEvent processingEvent() {
         return builder()
-                .id(UUID.fromString("00000000-0000-0000-0000-000000000002"))
                 .payload("""
                         {
                           "userId": "user-2",
@@ -42,13 +38,11 @@ public final class MockOutboxEventBuilder {
                         """)
                 .status(OutboxEventStatus.PROCESSING)
                 .retryCount(0)
-                .createdAt(Instant.parse("2026-09-16T01:01:00Z"))
                 .build();
     }
 
     public static OutboxEvent completedEvent() {
         return builder()
-                .id(UUID.fromString("00000000-0000-0000-0000-000000000003"))
                 .payload("""
                         {
                           "userId": "user-3",
@@ -57,14 +51,12 @@ public final class MockOutboxEventBuilder {
                         """)
                 .status(OutboxEventStatus.COMPLETED)
                 .retryCount(0)
-                .createdAt(Instant.parse("2026-09-16T01:02:00Z"))
                 .processedAt(Instant.parse("2026-09-16T01:03:00Z"))
                 .build();
     }
 
     public static OutboxEvent failedEvent() {
         return builder()
-                .id(UUID.fromString("00000000-0000-0000-0000-000000000004"))
                 .payload("""
                         {
                           "userId": "user-4",
@@ -73,14 +65,11 @@ public final class MockOutboxEventBuilder {
                         """)
                 .status(OutboxEventStatus.FAILED)
                 .retryCount(3)
-                .createdAt(Instant.parse("2026-09-16T01:04:00Z"))
                 .processedAt(Instant.parse("2026-09-16T01:05:00Z"))
                 .build();
     }
 
     public static final class Builder {
-
-        private UUID id = UUID.randomUUID();
 
         private String payload = """
                 {
@@ -90,16 +79,11 @@ public final class MockOutboxEventBuilder {
 
         private OutboxEventStatus status = OutboxEventStatus.PENDING;
         private Integer retryCount = 0;
-        private Instant createdAt = Instant.parse("2026-09-16T00:00:00Z");
         private Instant processedAt;
 
         private Builder() {
         }
 
-        public Builder id(UUID id) {
-            this.id = id;
-            return this;
-        }
 
         public Builder payload(String payload) {
             this.payload = payload;
@@ -116,11 +100,6 @@ public final class MockOutboxEventBuilder {
             return this;
         }
 
-        public Builder createdAt(Instant createdAt) {
-            this.createdAt = createdAt;
-            return this;
-        }
-
         public Builder processedAt(Instant processedAt) {
             this.processedAt = processedAt;
             return this;
@@ -129,11 +108,9 @@ public final class MockOutboxEventBuilder {
         public OutboxEvent build() {
             OutboxEvent event = new OutboxEvent();
 
-            ReflectionTestUtils.setField(event, "id", id);
             ReflectionTestUtils.setField(event, "payload", payload);
             ReflectionTestUtils.setField(event, "status", status);
             ReflectionTestUtils.setField(event, "retryCount", retryCount);
-            ReflectionTestUtils.setField(event, "createdAt", createdAt);
             ReflectionTestUtils.setField(event, "processedAt", processedAt);
 
             return event;
