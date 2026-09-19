@@ -4,13 +4,10 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.type.SqlTypes;
 import org.mini_lab.file_upload_service.security.notification.dto.OutboxEventStatus;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Entity
 @Table(name = "outbox_events")
