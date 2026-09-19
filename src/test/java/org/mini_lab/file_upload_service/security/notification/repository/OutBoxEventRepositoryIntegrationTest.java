@@ -21,8 +21,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Predicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -63,23 +65,32 @@ class OutBoxEventRepositoryIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    void markProcessing_whenMultipleThreadsAccessConcurrently_thenOnlyOneJobClaimed() throws ExecutionException, InterruptedException, TimeoutException {
-        OutboxEvent event = outBoxEventRepository.saveAndFlush(MockOutboxEventBuilder.pendingEvent());
-        Long id = event.getId();
+    void markProcessing_whenMultipleThreadsAccessConcurrently_thenOnlyOneJobClaimed() {
+        Long id = outBoxEventRepository.saveAndFlush(MockOutboxEventBuilder.pendingEvent()).getId();
+        assertClaimsJobs(
+                () -> transactionTemplate.execute(
+                        status -> outBoxEventRepository.markProcessing(id, Instant.now(clock))
+                ), integer -> integer > 0);
+
+    }
+
+    private <T> void assertClaimsJobs(Callable<T> callable, Predicate<T> predicate) {
         final int REQUEST_COUNT = 10;
 
-        List<Integer> claims;
+        List<T> claims;
 
         try (RaceConditionSimulator race = RaceConditionSimulator.getRaceConditionSimulator(REQUEST_COUNT)) {
-            claims = race.execute(() ->
-                    transactionTemplate.execute((status) -> outBoxEventRepository.markProcessing(id, Instant.now(clock)))
-            );
+            try {
+                claims = race.execute(callable);
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                throw new RuntimeException(e);
+            }
 
         }
         assertThat(
                 claims
                         .stream()
-                        .filter(i -> i > 0)
+                        .filter(predicate)
                         .count())
                 .isOne();
 
