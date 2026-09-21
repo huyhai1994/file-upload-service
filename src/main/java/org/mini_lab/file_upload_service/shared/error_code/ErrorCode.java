@@ -41,7 +41,7 @@ public enum ErrorCode {
     TOO_MANY_REQUESTS("Too Many Requests"),
 
     // Rate limiter
-    Rate_LIMITER_UNAVAILABLE("Redis rate limiter is unavailable"),
+    RATE_LIMITER_UNAVAILABLE("Redis rate limiter is unavailable"),
 
     // Login
     USER_ACCOUNT_LOCKED("User account is temporarily locked due to multiple failed login attempts");

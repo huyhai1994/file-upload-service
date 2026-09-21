@@ -8,6 +8,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.Network;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.containers.MinIOContainer;
+import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.lifecycle.Startables;
 import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.toxiproxy.ToxiproxyContainer;
@@ -38,6 +39,8 @@ public abstract class AbstractIntegrationTest {
 
     private static final MinIOContainer minioStorage;
 
+    protected static final KafkaContainer kafka;
+
     private static final ToxiproxyContainer toxiproxyContainer;
 
     protected static Proxy mysqlProxy;
@@ -64,6 +67,12 @@ public abstract class AbstractIntegrationTest {
                 .withNetwork(NETWORK)
                 .withNetworkAliases("minio");
 
+        kafka = new KafkaContainer(
+                DockerImageName.parse("apache/kafka:3.9.2")
+        )
+                .withNetwork(NETWORK)
+                .withNetworkAliases("kafka");
+
         toxiproxyContainer = new ToxiproxyContainer(
                 "ghcr.io/shopify/toxiproxy:2.5.0"
         ).withNetwork(NETWORK);
@@ -73,6 +82,7 @@ public abstract class AbstractIntegrationTest {
                         mysqlDb,
                         minioStorage,
                         redisDB,
+                        kafka,
                         toxiproxyContainer
                 )
         ).join();
@@ -193,6 +203,11 @@ public abstract class AbstractIntegrationTest {
         registry.add(
                 "spring.data.redis.timeout",
                 () -> "2s"
+        );
+
+        registry.add(
+                "app.kafka.bootstrap-servers",
+                kafka::getBootstrapServers
         );
     }
 }

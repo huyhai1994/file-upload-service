@@ -13,7 +13,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    show-sql: false
 logging:
   level:
     org:
@@ -27,6 +27,11 @@ logging:
           results: TRACE
       springframework:
         security: TRACE
+      apache:
+        kafka:
+          clients:
+            producer:
+              ProducerConfig: DEBUG
 minio:
   endpoint: http://localhost:9000
   access-key: minio
@@ -35,6 +40,9 @@ minio:
   connect-timeout: 30
   read-timeout: 30
   write-timeout: 30
+user-register:
+  topic: "test.notifications.register-events.v1"
+
 file:
   extension:
     allowed-list:
@@ -66,3 +74,27 @@ security:
   login-attempt:
     failure-attempts: 5
     lock-duration: 60m
+clients:
+  notification-service:
+    base-url: http://notification-service:8080
+    base-uri: /api/v1/notifications
+    connect-timeout: 2s
+    read-timeout: 5s
+app:
+  kafka:
+    bootstrap-servers:
+      - localhost:29092
+      - localhost:39092
+      - localhost:49092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        delivery.timeout.ms: 30000
+        request.timeout.ms: 10000
+        max.block.ms: 1000
+    client-id:
+

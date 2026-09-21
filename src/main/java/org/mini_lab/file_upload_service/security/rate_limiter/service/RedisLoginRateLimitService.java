@@ -54,7 +54,7 @@ public class RedisLoginRateLimitService implements LoginRateLimitService {
         try {
             currentAttempts = repository.incrementAndSetExpiration(key, Duration.ofMillis(remainingTtlMillis));
         } catch (DataAccessException e) {
-            throw new RateLimiterUnavailableException(ErrorCode.Rate_LIMITER_UNAVAILABLE.getDefaultMessage(), e);
+            throw new RateLimiterUnavailableException(ErrorCode.RATE_LIMITER_UNAVAILABLE.getDefaultMessage(), e);
         }
 
         return currentAttempts <= maxAttempts;

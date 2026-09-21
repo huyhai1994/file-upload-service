@@ -1,51 +1,77 @@
 package org.mini_lab.file_upload_service.security.authentication.register.service;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.mini_lab.file_upload_service.security.authentication.register.components.UserRegistrationFactory;
 import org.mini_lab.file_upload_service.security.authentication.register.dto.RegisterRequest;
 import org.mini_lab.file_upload_service.security.authentication.register.dto.RegisterResponse;
 import org.mini_lab.file_upload_service.security.authentication.shared.entity.User;
 import org.mini_lab.file_upload_service.security.authentication.register.exception.UsernameAlreadyExistsException;
 import org.mini_lab.file_upload_service.security.authentication.shared.repository.UserRepository;
-import org.mini_lab.file_upload_service.security.authentication.shared.service.NormalizeUsernameService;
-import org.mini_lab.file_upload_service.security.authentication.shared.service.PasswordVerifyService;
+import org.mini_lab.file_upload_service.security.notification.dto.UserRegisteredEvent;
+import org.mini_lab.file_upload_service.security.notification.dto.NotificationType;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 public class UserAccountRegisterService {
 
-    private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
-    private final NormalizeUsernameService normalizeUsernameService;
-    private final UsernameVerifyService usernameVerifyService;
-    private final PasswordVerifyService passwordVerifyService;
+    private final DomainEventPublisher eventPublisher;
+    private final UserRegistrationFactory userRegistrationFactory;
+
+    public UserAccountRegisterService(
+            UserRepository userRepository,
+//            @Qualifier("applicationDomainEventPublisher")
+            @Qualifier("outboxEventDomainPublisher")
+            DomainEventPublisher eventPublisher,
+            UserRegistrationFactory userRegistrationFactory
+    ) {
+        this.userRepository = userRepository;
+        this.eventPublisher = eventPublisher;
+        this.userRegistrationFactory = userRegistrationFactory;
+    }
 
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
-        String normalizedUsername = normalizeUsernameService.normalizeUsername(request.username());
+        User user = userRegistrationFactory.createUser(request);
+        final User persistedUser = persistUser(user);
+        publishRegisteredEvent(persistedUser);
+        return createRegisterResponse(persistedUser);
+    }
 
-        usernameVerifyService.verify(normalizedUsername);
-        passwordVerifyService.verify(request.password());
-
-        String passwordHash = passwordEncoder.encode(request.password());
-
-        User user = new User(
-                normalizedUsername,
-                passwordHash
+    private RegisterResponse createRegisterResponse(User persistedUser) {
+        return new RegisterResponse(
+                persistedUser.getId(),
+                persistedUser.getUsername()
         );
+    }
 
+    private void publishRegisteredEvent(User savedUser) {
+        eventPublisher.publishEvent(
+                createEvent(savedUser)
+        );
+    }
+
+    private UserRegisteredEvent createEvent(User savedUser) {
+        return new UserRegisteredEvent(
+                UUID.randomUUID(),
+                NotificationType.WELCOME_EMAIL,
+                savedUser.getEmailAddress(),
+                savedUser.getUsername()
+        );
+    }
+
+    private User persistUser(User user) {
+        final User savedUser;
         try {
-            User savedUser = userRepository.saveAndFlush(user);
-
-            return new RegisterResponse(
-                    savedUser.getId(),
-                    savedUser.getUsername()
-            );
+            savedUser = userRepository.saveAndFlush(user);
         } catch (DataIntegrityViolationException exception) {
-            throw new UsernameAlreadyExistsException(normalizedUsername);
+            throw new UsernameAlreadyExistsException(user.getUsername());
         }
+        return savedUser;
     }
 }
