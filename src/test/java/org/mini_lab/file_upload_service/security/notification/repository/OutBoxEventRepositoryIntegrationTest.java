@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -105,6 +106,20 @@ class OutBoxEventRepositoryIntegrationTest extends AbstractIntegrationTest {
                 () -> transactionTemplate.execute(
                         status -> outBoxEventRepository.markCompleted(id, Instant.now(clock))
                 ), claim -> claim > 0);
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void findByStatus_Pending_whenThereIsAnPendingJob_thenReturnIt() {
+        long id = outBoxEventRepository.save(MockOutboxEventBuilder.pendingEvent()).getId();
+        outBoxEventRepository.save(MockOutboxEventBuilder.completedEvent());
+        outBoxEventRepository.save(MockOutboxEventBuilder.processingEvent());
+        outBoxEventRepository.save(MockOutboxEventBuilder.failedEvent());
+
+        List<Long> foundIds = outBoxEventRepository.findByStatus(PageRequest.of(0, 1));
+
+        assertThat(foundIds.stream().count()).isOne();
+        assertThat(foundIds).containsExactly(id);
     }
 
     private <T> void assertClaimsJobs(Callable<T> callable, Predicate<T> predicate) {

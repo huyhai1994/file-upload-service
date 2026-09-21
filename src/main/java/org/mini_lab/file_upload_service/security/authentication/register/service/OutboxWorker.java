@@ -6,6 +6,7 @@ import org.mini_lab.file_upload_service.security.authentication.register.configu
 import org.mini_lab.file_upload_service.security.notification.entity.OutboxEvent;
 import org.mini_lab.file_upload_service.security.notification.repository.OutBoxEventRepository;
 import org.springframework.kafka.KafkaException;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletionException;
@@ -13,6 +14,7 @@ import java.util.concurrent.CompletionException;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@Async("notificationTaskExecutor")
 public class OutboxWorker {
     private final OutBoxEventRepository outBoxEventRepository;
     private final KafkaEventProducer kafkaEventProducer;

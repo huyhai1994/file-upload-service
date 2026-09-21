@@ -18,7 +18,7 @@ public class OutboxEventStateManager {
     private static final int MAX_RETRY = 3;
 
     @Transactional
-    void markProcessing(Long id) {
+    public void markProcessing(Long id) {
         int claims = outBoxEventRepository.markProcessing(id, Instant.now(clock));
         isValidClaims(claims);
     }

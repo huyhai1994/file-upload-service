@@ -1,12 +1,14 @@
 package org.mini_lab.file_upload_service.security.notification.repository;
 
 import org.mini_lab.file_upload_service.security.notification.entity.OutboxEvent;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.List;
 
 public interface OutBoxEventRepository extends JpaRepository<OutboxEvent, Long> {
 
@@ -48,7 +50,7 @@ public interface OutBoxEventRepository extends JpaRepository<OutboxEvent, Long> 
                         and oe.status = OutboxEventStatus.PROCESSING
             """)
     int markFailed(@Param("id") Long id,
-                       @Param("now") Instant now);
+                   @Param("now") Instant now);
 
     @Modifying
     @Query("""
@@ -62,5 +64,12 @@ public interface OutBoxEventRepository extends JpaRepository<OutboxEvent, Long> 
                         and oe.status = OutboxEventStatus.PROCESSING
             """)
     int markCompleted(@Param("id") Long id,
-                   @Param("now") Instant now);
+                      @Param("now") Instant now);
+
+    @Query("""
+            select oe.id
+            from OutboxEvent oe 
+            where oe.status = OutboxEventStatus.PENDING
+            """)
+    List<Long> findByStatus(Pageable pageable);
 }
