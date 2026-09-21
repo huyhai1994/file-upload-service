@@ -5,6 +5,7 @@ import org.mini_lab.file_upload_service.security.notification.entity.OutboxEvent
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
+import java.util.UUID;
 
 public final class MockOutboxEventBuilder {
 
@@ -68,6 +69,8 @@ public final class MockOutboxEventBuilder {
 
     public static final class Builder {
 
+        private UUID eventId = UUID.randomUUID();
+
         private String payload = """
                 {
                   "userId": "user-default"
@@ -81,6 +84,10 @@ public final class MockOutboxEventBuilder {
         private Builder() {
         }
 
+        public Builder eventId(UUID eventId) {
+            this.eventId = eventId;
+            return this;
+        }
 
         public Builder payload(String payload) {
             this.payload = payload;
@@ -105,6 +112,7 @@ public final class MockOutboxEventBuilder {
         public OutboxEvent build() {
             OutboxEvent event = new OutboxEvent();
 
+            ReflectionTestUtils.setField(event, "eventId", eventId);
             ReflectionTestUtils.setField(event, "payload", payload);
             ReflectionTestUtils.setField(event, "status", status);
             ReflectionTestUtils.setField(event, "retryCount", retryCount);

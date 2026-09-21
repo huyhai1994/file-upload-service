@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-
 @Service
 @RequiredArgsConstructor
 public class OutboxEventDomainPublisher implements DomainEventPublisher {
@@ -24,8 +23,10 @@ public class OutboxEventDomainPublisher implements DomainEventPublisher {
 
     private OutboxEvent mapFrom(UserRegisteredEvent event) {
         OutboxEvent outboxEvent = new OutboxEvent();
+        outboxEvent.setEventId(event.eventId());
         outboxEvent.setStatus(OutboxEventStatus.PENDING);
         outboxEvent.setPayload(event.toString());
+        outboxEvent.setRetryCount(3);
         return outboxEvent;
     }
 

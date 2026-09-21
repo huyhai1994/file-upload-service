@@ -8,6 +8,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.mini_lab.file_upload_service.security.notification.dto.OutboxEventStatus;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "outbox_events")
@@ -19,6 +20,9 @@ public class OutboxEvent {
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "event_id", nullable = false, columnDefinition = "BINARY(16)", unique = true)
+    private UUID eventId;
 
     @Column(name = "payload", nullable = false, columnDefinition = "TEXT")
     private String payload;
