@@ -29,8 +29,6 @@ public class OutboxWorker {
                         )
                 );
 
-        outboxEventStateManager.markProcessing(id);
-
         try {
             kafkaEventProducer.send(
                     properties.getTopic(),
