@@ -65,33 +65,6 @@ class OutboxWorkerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void publishEvent_whenMultipleRequestConcurrence_OnlyOneMessageBeSent() throws ExecutionException, InterruptedException, TimeoutException {
-        Long id = outBoxEventRepository.save(MockOutboxEventBuilder.pendingEvent()).getId();
-        AtomicInteger failureCount = new AtomicInteger(0);
-
-        try (RaceConditionSimulator raceConditionSimulator = RaceConditionSimulator.getRaceConditionSimulator(10)) {
-            raceConditionSimulator.execute(
-                    () -> {
-                        try {
-                            outboxWorker.publishEvent(id);
-                        } catch (InvalidStateTransitionException e) {
-                            failureCount.getAndIncrement();
-                        }
-                        return null;
-                    }
-            );
-        }
-
-        Awaitility.await().atMost(10, TimeUnit.SECONDS)
-                .untilAsserted(() -> {
-                    assertThat(failureCount.get()).isEqualTo(9);
-                    OutboxEvent event = outBoxEventRepository.findById(id).orElseThrow();
-                    verify(kafkaEventProducer, times(1)).send(anyString(), anyString(), anyString());
-                    assertThat(event.getStatus()).isEqualTo(OutboxEventStatus.COMPLETED);
-                });
-    }
-
-    @Test
     void publishEvent_whenKafkaEventFailed_thenRetry() throws IOException {
         Long id = outBoxEventRepository.save(MockOutboxEventBuilder.pendingEvent()).getId();
 

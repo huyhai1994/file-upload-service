@@ -2,6 +2,7 @@ package org.mini_lab.file_upload_service.security.authentication.register.compon
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mini_lab.file_upload_service.file_upload.shared.exception.InvalidStateTransitionException;
 import org.mini_lab.file_upload_service.security.authentication.register.service.OutboxEventStateManager;
 import org.mini_lab.file_upload_service.security.authentication.register.service.OutboxWorker;
 import org.mini_lab.file_upload_service.security.notification.repository.OutBoxEventRepository;
@@ -51,8 +52,43 @@ class MessageRelayMockTest {
         assertThat(captor.getValue()).isEqualTo(1L);
         verify(outboxWorker).publishEvent(eq(1L));
 
-
     }
 
+    @Test
+    void polling_whenInvalidTransitionExceptionThrown_thenSkipThatJob() {
+        when(outBoxEventRepository.findByStatus(any())).thenReturn(List.of(1L, 2L));
+        doThrow(InvalidStateTransitionException.class)
+                .when(outboxEventStateManager).markProcessing(1L);
+        messageRelay.polling();
+
+        inOrder(
+                outBoxEventRepository,
+                outboxEventStateManager,
+                outboxWorker
+        );
+
+        verify(outboxEventStateManager).markProcessing(2L);
+        verify(outboxWorker).publishEvent(eq(2L));
+        verify(outboxWorker, never()).publishEvent(eq(1L));
+    }
+
+    @Test
+    void polling_whenExceptionThrown_thenSkipThatJobAndThrowInternalException() {
+        //ARRANGE
+        when(outBoxEventRepository.findByStatus(any())).thenReturn(List.of(1L, 2L));
+        doThrow(RuntimeException.class)
+                .when(outboxWorker).publishEvent(1L);
+
+        //ACT
+        messageRelay.polling();
+
+        //VERIFY
+        verify(outboxEventStateManager, times(1)).markProcessing(1L);
+        verify(outboxWorker, times(1)).publishEvent(eq(1L));
+        verify(outboxEventStateManager, times(1)).handlePublishFailure(1L);
+
+        verify(outboxEventStateManager, times(1)).markProcessing(2L);
+        verify(outboxWorker, times(1)).publishEvent(eq(2L));
+    }
 
 }
