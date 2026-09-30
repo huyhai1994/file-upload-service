@@ -48,7 +48,6 @@ jobs:
           repository: huyhai1994/kubernetes_infra
           token: ${{ secrets.DOCKER_TOKEN }}
           ref: master
-          path: file-upload-service
 
       - name: Update image tag
         run: |
@@ -58,15 +57,14 @@ jobs:
 
       - name: Show updated manifest
         run: |
-          grep "image:" file-upload-service/deployment.yaml
+          grep "image:" file-upload-service/deployment.yml
 
       - name: Commit and push infra change
-        working-directory: infra
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add file-upload-service/deployment.yaml
+          git add file-upload-service/deployment.yml
 
           if git diff --cached --quiet; then
             echo "No deployment changes"
