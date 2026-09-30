@@ -30,7 +30,7 @@ public class OutboxEventDomainPublisher implements DomainEventPublisher {
         outboxEvent.setStatus(OutboxEventStatus.PENDING);
         String json = jacksonUtils.convertObjectToJson(event);
         outboxEvent.setPayload(json);
-        outboxEvent.setRetryCount(3);
+        outboxEvent.setRetryCount(0);
         return outboxEvent;
     }
 
