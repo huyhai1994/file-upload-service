@@ -75,9 +75,7 @@ clients:
 app:
   kafka:
     bootstrap-servers:
-      - ${KAFKA_ENDPOINT}:29092
-      - ${KAFKA_ENDPOINT}:39092
-      - ${KAFKA_ENDPOINT}:49092
+      - ${KAFKA_ENDPOINT}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
