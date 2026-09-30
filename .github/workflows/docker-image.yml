@@ -46,14 +46,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: huyhai1994/kubernetes_infra
-          token: ${{ secrets.DOCKER_TOKEN }}
+          token: ${{ secrets.INFRA_REPO_TOKEN}}
           ref: master
 
       - name: Update image tag
         run: |
           sed -i \
             "s|image: huyhai1994/file-upload-service:.*|image: huyhai1994/file-upload-service:${{ github.sha }}|" \
-            file-upload-service/deployment.yaml
+            file-upload-service/deployment.yml
 
       - name: Show updated manifest
         run: |
