@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,7 +14,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -36,3 +37,40 @@ jobs:
         run: |
           docker push \
             ${{ secrets.DOCKER_USERNAME }}/file-upload-service:${{ github.sha }}
+
+      # ==========================================
+      # GitOps: update infrastructure repository
+      # ==========================================
+
+      - name: Checkout infra repository
+        uses: actions/checkout@v4
+        with:
+          repository: huyhai1994/kubernetes_infra
+          token: ${{ secrets.DOCKER_TOKEN }}
+          ref: master
+          path: file-upload-service
+
+      - name: Update image tag
+        run: |
+          sed -i \
+            "s|image: huyhai1994/file-upload-service:.*|image: huyhai1994/file-upload-service:${{ github.sha }}|" \
+            file-upload-service/deployment.yaml
+
+      - name: Show updated manifest
+        run: |
+          grep "image:" file-upload-service/deployment.yaml
+
+      - name: Commit and push infra change
+        working-directory: infra
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add file-upload-service/deployment.yaml
+
+          if git diff --cached --quiet; then
+            echo "No deployment changes"
+          else
+            git commit -m "deploy file-upload-service ${{ github.sha }}"
+            git push origin master
+          fi
