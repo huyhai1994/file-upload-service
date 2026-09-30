@@ -1,6 +1,7 @@
 spring:
   application:
     name: file_upload_service_k3s
+
   datasource:
     url: ${MYSQL_JDBC}
     username: ${USER_NAME}
@@ -11,10 +12,12 @@ spring:
       idle-timeout: 300000
       connection-timeout: 5000
       max-lifetime: 5000
+
   jpa:
     hibernate:
       ddl-auto: none
     show-sql: false
+
   data:
     redis:
       host: ${REDIS_ENDPOINT}
@@ -23,6 +26,30 @@ spring:
       database: 0
       connect-timeout: 2s
       timeout: 2s
+
+  kafka:
+    bootstrap-servers:
+      - ${KAFKA_ENDPOINT}
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        delivery.timeout.ms: 30000
+        request.timeout.ms: 10000
+        max.block.ms: 30000
+    admin:
+      fail-fast: true
+      auto-create: false
+      operation-timeout: 5s
+
+    client-id: file-upload-service
+
+
 minio:
   endpoint: ${MINIO_ENDPOINT}
   access-key: ${MINIO_ACCESS_KEY}
@@ -31,6 +58,8 @@ minio:
   connect-timeout: ${MINIO_CONNECT_TIMEOUT}
   read-timeout: ${MINIO_READ_TIMEOUT}
   write-timeout: ${MINIO_WRITE_TIMEOUT}
+
+
 file:
   extension:
     allowed-list:
@@ -51,11 +80,11 @@ file:
     batch-size: 10
 security:
   jwt:
-    secret-key: GpP5Ko/lSAodfqg3B/TJpcijh06eST3P2M0pn6ZTIYY=
+    secret-key: ${JWT_SECRET_KEY}
     access-token-expiration: 15m
     issuer: file-upload-service
   identity-hash:
-    secret-key: eWeHbeT1wLynBeNl/odFQUTNONHIPXyNTd6la4puAdc=
+    secret-key: ${IDENTITY_HASH_SECRET_KEY}
   login-rate-limit:
     username-ip-max-attempts: 10
     window-duration: 1m
@@ -72,20 +101,6 @@ clients:
     base-uri: /api/v1/notifications
     connect-timeout: 10s
     read-timeout: 5s
-app:
-  kafka:
-    bootstrap-servers:
-      - ${KAFKA_ENDPOINT}
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      acks: all
-      properties:
-        enable.idempotence: true
-        max.in.flight.requests.per.connection: 5
-        delivery.timeout.ms: 30000
-        request.timeout.ms: 10000
-        max.block.ms: 1000
-    client-id:
+
 user-register:
-  topic: "test.notifications.register-events.v1"
+  topic: test.notifications.register-events.v1

@@ -90,7 +90,7 @@
         </root>
     </springProfile>
 
-    <springProfile>
+    <springProfile name="test">
         <root level="${LOG_LEVEL}">
             <appender-ref ref="CONSOLE"/>
         </root>

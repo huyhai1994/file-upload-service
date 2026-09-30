@@ -206,7 +206,7 @@ public abstract class AbstractIntegrationTest {
         );
 
         registry.add(
-                "app.kafka.bootstrap-servers",
+                "spring.kafka.bootstrap-servers",
                 kafka::getBootstrapServers
         );
     }

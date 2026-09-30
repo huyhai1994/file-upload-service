@@ -32,6 +32,27 @@ logging:
           clients:
             producer:
               ProducerConfig: DEBUG
+  kafka:
+    bootstrap-servers:
+      - ${KAFKA_ENDPOINT}
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        delivery.timeout.ms: 30000
+        request.timeout.ms: 10000
+        max.block.ms: 30000
+    admin:
+      fail-fast: true
+      auto-create: false
+      operation-timeout: 5s
+
+    client-id: file-upload-service
 minio:
   endpoint: http://localhost:9000
   access-key: minio
@@ -80,21 +101,21 @@ clients:
     base-uri: /api/v1/notifications
     connect-timeout: 2s
     read-timeout: 5s
-app:
-  kafka:
-    bootstrap-servers:
-      - localhost:29092
-      - localhost:39092
-      - localhost:49092
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      acks: all
-      properties:
-        enable.idempotence: true
-        max.in.flight.requests.per.connection: 5
-        delivery.timeout.ms: 30000
-        request.timeout.ms: 10000
-        max.block.ms: 1000
-    client-id:
+#app:
+#  kafka:
+#    bootstrap-servers:
+#      - localhost:29092
+#      - localhost:39092
+#      - localhost:49092
+#    producer:
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      acks: all
+#      properties:
+#        enable.idempotence: true
+#        max.in.flight.requests.per.connection: 5
+#        delivery.timeout.ms: 30000
+#        request.timeout.ms: 10000
+#        max.block.ms: 1000
+#    client-id:
 

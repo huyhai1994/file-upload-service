@@ -1,5 +1,6 @@
 package org.mini_lab.file_upload_service.security.authentication.register.service;
 
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mini_lab.file_upload_service.security.authentication.register.configurations.NotificationRegisterEventProperties;
@@ -21,6 +22,8 @@ public class OutboxWorker {
     private final OutboxEventStateManager outboxEventStateManager;
     private final NotificationRegisterEventProperties properties;
 
+
+    @WithSpan("outbox-worker-publish-event")
     public void publishEvent(Long id) {
         OutboxEvent event = outBoxEventRepository.findById(id)
                 .orElseThrow(() ->
