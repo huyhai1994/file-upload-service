@@ -89,4 +89,5 @@ app:
         request.timeout.ms: 10000
         max.block.ms: 1000
     client-id:
-
+user-register:
+  topic: "test.notifications.register-events.v1"
