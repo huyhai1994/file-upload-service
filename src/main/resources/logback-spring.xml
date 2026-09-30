@@ -6,6 +6,7 @@
 
     <property name="LOG_LEVEL" value="${LOG_LEVEL:-INFO}"/>
     <property name="LOKI_URL" value="http://host.docker.internal:3100/loki/api/v1/push"/>
+    <property name="LOKI_URL_K3S" value="${LOKI_ENDPOINT}:3100/loki/api/v1/push"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -14,6 +15,34 @@
         </encoder>
     </appender>
 
+    <springProfile name="k3s">
+        <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+
+            <http>
+                <url>${LOKI_URL_K3S}</url>
+                <requestTimeoutMs>5000</requestTimeoutMs>
+                <maxRetries>1</maxRetries>
+                <dropRateLimitedBatches>true</dropRateLimitedBatches>
+            </http>
+
+            <labels>
+                app=${appName}
+                profile=${activeProfile}
+                level=%level
+            </labels>
+
+            <message>
+                <pattern>
+                    %d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %X{correlationId} %logger{36} - %msg %ex{10}
+                </pattern>
+            </message>
+            <batch>
+                <maxItems>100</maxItems>
+                <maxBytes>262144</maxBytes>
+                <timeoutMs>2000</timeoutMs>
+            </batch>
+        </appender>
+    </springProfile>
     <springProfile name="dev">
         <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
 
@@ -48,6 +77,12 @@
     <logger name="org.hibernate" level="WARN"/>
     <logger name="com.zaxxer.hikari" level="WARN"/>
 
+    <springProfile name="k3s">
+        <root level="${LOG_LEVEL}">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOKI"/>
+        </root>
+    </springProfile>
     <springProfile name="dev">
         <root level="${LOG_LEVEL}">
             <appender-ref ref="CONSOLE"/>
@@ -55,7 +90,7 @@
         </root>
     </springProfile>
 
-    <springProfile name="!dev">
+    <springProfile>
         <root level="${LOG_LEVEL}">
             <appender-ref ref="CONSOLE"/>
         </root>

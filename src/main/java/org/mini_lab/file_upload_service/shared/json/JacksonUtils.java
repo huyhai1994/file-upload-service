@@ -19,7 +19,11 @@ public class JacksonUtils {
         return objectMapper.readValue(json, typeReference);
     }
 
-    public <T> String convertObjectToJson(T object) throws JsonProcessingException {
-        return objectMapper.writeValueAsString(object);
+    public <T> String convertObjectToJson(T object) {
+        try {
+            return objectMapper.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("couldn't serialize object to json string");
+        }
     }
 }

@@ -1,0 +1,92 @@
+spring:
+  application:
+    name: file_upload_service_k3s
+  datasource:
+    url: ${MYSQL_JDBC}
+    username: ${USER_NAME}
+    password: ${PASS_WORD}
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      idle-timeout: 300000
+      connection-timeout: 5000
+      max-lifetime: 5000
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+  data:
+    redis:
+      host: ${REDIS_ENDPOINT}
+      port: 6379
+      password: ${REDIS_PASSWORD}
+      database: 0
+      connect-timeout: 2s
+      timeout: 2s
+minio:
+  endpoint: ${MINIO_ENDPOINT}
+  access-key: ${MINIO_ACCESS_KEY}
+  secret-key: ${MINIO_SECRET_KEY}
+  bucket-name: ${MINIO_BUCKET_NAME}
+  connect-timeout: ${MINIO_CONNECT_TIMEOUT}
+  read-timeout: ${MINIO_READ_TIMEOUT}
+  write-timeout: ${MINIO_WRITE_TIMEOUT}
+file:
+  extension:
+    allowed-list:
+      - jpg
+      - jpeg
+      - png
+      - pdf
+      - txt
+  mime-type:
+    allowed-list:
+      - image/jpeg
+      - image/png
+      - application/pdf
+      - text/plain
+  file-delete-recovery:
+    deleting-timeout: 10m
+    scheduler-interval: 1m
+    batch-size: 10
+security:
+  jwt:
+    secret-key: GpP5Ko/lSAodfqg3B/TJpcijh06eST3P2M0pn6ZTIYY=
+    access-token-expiration: 15m
+    issuer: file-upload-service
+  identity-hash:
+    secret-key: eWeHbeT1wLynBeNl/odFQUTNONHIPXyNTd6la4puAdc=
+  login-rate-limit:
+    username-ip-max-attempts: 10
+    window-duration: 1m
+  login-attempt:
+    failure-attempts: 5
+    lock-duration: 60m
+server:
+  tomcat:
+    mbeanregistry:
+      enabled: true
+clients:
+  notification-service:
+    base-url: ${NOTIFICATION_ENDPOINT}
+    base-uri: /api/v1/notifications
+    connect-timeout: 10s
+    read-timeout: 5s
+app:
+  kafka:
+    bootstrap-servers:
+      - ${KAFKA_ENDPOINT}:29092
+      - ${KAFKA_ENDPOINT}:39092
+      - ${KAFKA_ENDPOINT}:49092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        delivery.timeout.ms: 30000
+        request.timeout.ms: 10000
+        max.block.ms: 1000
+    client-id:
+

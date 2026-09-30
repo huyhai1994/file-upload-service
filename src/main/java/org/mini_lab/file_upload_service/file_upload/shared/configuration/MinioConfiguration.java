@@ -3,9 +3,12 @@ package org.mini_lab.file_upload_service.file_upload.shared.configuration;
 import io.minio.MinioClient;
 import lombok.RequiredArgsConstructor;
 import okhttp3.OkHttpClient;
+import org.hibernate.query.results.internal.TableGroupImpl;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 @EnableConfigurationProperties(MinioConfigProperties.class)
@@ -17,9 +20,9 @@ public class MinioConfiguration {
     @Bean
     OkHttpClient minioHttpClient() {
         return new OkHttpClient.Builder()
-                .connectTimeout(properties.connectTimeout())
-                .writeTimeout(properties.writeTimeout())
-                .readTimeout(properties.readTimeout())
+                .connectTimeout(properties.connectTimeout().getSeconds(), TimeUnit.SECONDS)
+                .writeTimeout(properties.writeTimeout().getSeconds(), TimeUnit.SECONDS)
+                .readTimeout(properties.readTimeout().getSeconds(), TimeUnit.SECONDS)
                 .build();
     }
 

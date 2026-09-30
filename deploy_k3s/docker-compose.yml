@@ -1,6 +1,5 @@
 services:
   app:
     build: .
-    image: huyhai1994/file-upload-service:1.0.7
     ports:
       - "20001:20001"
