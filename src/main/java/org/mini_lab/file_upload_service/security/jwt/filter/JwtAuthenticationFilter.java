@@ -46,7 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @WithSpan("jwt-authentication-filter-do-filter-internal")
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-        log.info(
+        log.debug(
                 "JWT_FILTER method={} uri={} dispatcher={} trace={} auth={}",
                 request.getMethod(),
                 request.getRequestURI(),
