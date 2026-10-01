@@ -1,6 +1,5 @@
 package org.mini_lab.file_upload_service.security.authentication.register.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.mini_lab.file_upload_service.security.notification.dto.OutboxEventStatus;
 import org.mini_lab.file_upload_service.security.notification.dto.UserRegisteredEvent;

@@ -28,6 +28,9 @@ management:
         enabled: true
 server:
   port: 20001
+  tomcat:
+    mbeanregistry:
+      enabled: true
 logging:
   level:
     org.flywaydb: info
