@@ -7,7 +7,7 @@ spring:
     username: ${USER_NAME}
     password: ${PASS_WORD}
     hikari:
-      maximum-pool-size: 5
+      maximum-pool-size: ${HIKARI_MAXIMUM_POOL_SIZE}
       minimum-idle: 1
       idle-timeout: 300000
       connection-timeout: 5000
